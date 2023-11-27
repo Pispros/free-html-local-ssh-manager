@@ -3,12 +3,13 @@ Manage local ssh connections with HTML/Nodejs app ~ You can inspect the code and
 
 # Instructions
 
+Install npm packages
 ```bash
- --npm install ----------> Install npm packages
+ npm install
 ```
-
+Add a new host
 ```bash
- --npm run start ----------> Add a new host
+ --npm run start
 ```
 
 Use Nginx or Apache Web Server on index.html
