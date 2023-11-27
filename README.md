@@ -6,7 +6,6 @@ Manage local ssh connections with HTML/Nodejs app ~ You can inspect the code and
 ```bash
  --npm install ----------> Install npm packages
 ```
-```bash
 
 ```bash
  --npm run start ----------> Add a new host
