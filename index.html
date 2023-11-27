@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="assets/css/index.css">
+    <script src="
+        https://cdn.jsdelivr.net/npm/browser-crypto@2.1.0/dist/index.min.js
+        "></script>
+    <title>Fword SSH</title>
+</head>
+<body>
+    <div class="big-container">
+        <div class="left-content">
+            <img src="assets/img/data.gif" alt="prompt gif">
+        </div>
+        <div class="list">
+            <h2>
+                Your Super Vps List
+            </h2>
+            <div class="listVps">
+                
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    const {
+        Buffer,
+        createECDH,
+        createCipheriv,
+        createDecipheriv,
+        pbkdf2,
+        pbkdf2Sync,
+    } = window.browserCrypto;
+    let sshList;
+    async function getData() {
+        const response = await fetch('assets/json/content.json');
+        sshList = await response.json();
+        generateListVps(sshList);
+    }
+
+    function generateListVps(list) {
+        for (let index = 0; index < list.length; index++) {
+            const element = list[index];
+            const vpsDiv = document.createElement('div');
+            vpsDiv.setAttribute('class', 'vps');
+
+            const imageDiv = document.createElement('div');
+            const image = document.createElement('img');
+            image.src = "assets/img/robot.png";
+            imageDiv.appendChild(image);
+
+
+            const detailsDiv = document.createElement('div');
+            detailsDiv.setAttribute('class', 'details');
+            const serverName = document.createElement('div');
+            serverName.innerText = element?.server;
+            const serverIp   = document.createElement('div');
+            serverIp.innerText = element?.ip;
+            detailsDiv.appendChild(serverName);
+            detailsDiv.appendChild(serverIp);
+
+            const buttonsDiv = document.createElement('div');
+            buttonsDiv.setAttribute('class', 'actions');
+            const commandBtn = document.createElement('button');
+            commandBtn.innerText = "Command";
+            commandBtn.addEventListener('click', () => {
+                copyCommandToClipboard(element);
+            })
+            const passwordBtn = document.createElement('button');
+            passwordBtn.innerText = "Password";
+            passwordBtn.addEventListener('click', () => {
+                copyPasswordToClipboard(element);
+            })
+            buttonsDiv.appendChild(commandBtn);
+            buttonsDiv.appendChild(passwordBtn);
+            detailsDiv.appendChild(buttonsDiv);
+
+            vpsDiv.appendChild(imageDiv);
+            vpsDiv.appendChild(detailsDiv);
+            document.querySelector('.listVps').appendChild(vpsDiv);
+        }
+    }
+
+    function copyCommandToClipboard(data) {
+        navigator.clipboard.writeText(`ssh ${data?.user}@${data?.ip}`);
+        showToast("Command copied to clipboard");
+    }
+
+    function decrypt(encryptedText, password, salt) {
+        const [iv, encrypted] = encryptedText.split(':').map((part) => Buffer.from(part, 'hex'));
+        const key = pbkdf2Sync(password, salt, 10000, 32, 'sha256');
+        const decipher = createDecipheriv('aes-256-cbc', key, iv);
+        let decrypted = decipher.update(encrypted, 'hex', 'utf-8');
+        decrypted += decipher.final('utf-8');
+        return decrypted;
+    }
+
+
+    function copyPasswordToClipboard(data) {
+        try {
+            const salt = prompt('Enter this vps salt (you can use same salt for all vps!');
+        navigator.clipboard.writeText(
+            decrypt(data?.pwd, 'your_password_here', String(salt))
+        );
+        showToast("Decrypted Password copied to clipboard! Have a good time hacking!");
+        } catch (error) {
+            showToast("Incorrect magic salt!");
+        }        
+    }
+
+    const showToast = (message) => {
+    const toastWrapper = document.createElement('div');
+    toastWrapper.setAttribute('class', 'ToastWrapper')
+    const messageContent = document.createElement('div');
+    messageContent.setAttribute('class', 'messageContent')
+    messageContent.innerHTML = message;
+    toastWrapper.appendChild(messageContent);
+    const body = document.querySelector('body');
+    body.appendChild(toastWrapper);
+    setTimeout(() => {
+        toastWrapper.remove();
+    }, 5000);
+}
+
+    getData();
+</script>
+</html>
