@@ -9,7 +9,7 @@ Install npm packages
 ```
 Add a new host
 ```bash
- --npm run start
+ npm run start
 ```
 
 Use Nginx or Apache Web Server on index.html
