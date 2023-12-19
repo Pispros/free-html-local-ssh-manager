@@ -15,6 +15,7 @@
             <img src="assets/img/data.gif" alt="prompt gif">
         </div>
         <div class="list">
+            <div id="terminal"></div>
             <h2>
                 Your Super Vps List
             </h2>
@@ -83,9 +84,18 @@
         }
     }
 
-    function copyCommandToClipboard(data) {
-        navigator.clipboard.writeText(`ssh ${data?.user}@${data?.ip}`);
-        showToast("Command copied to clipboard");
+    async function copyCommandToClipboard(data) {
+        const response = await fetch('http://localhost:5555/start-terminal', {
+            method: 'POST',
+            body: JSON.stringify({
+                command: `ssh ${data?.user}@${data?.ip}`
+            }),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        const message = await response.json();
+        showToast(message?.message);
     }
 
     function decrypt(encryptedText, password, salt) {
