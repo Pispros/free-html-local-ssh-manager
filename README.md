@@ -4,7 +4,7 @@ Manage local ssh connections with HTML/Nodejs app ~ You can inspect the code and
 # Supported Os
 Linux | MacOs
 
-Your password is encrypted with a magic salt once you create a new host and you need that magic salt every time you want to copy/paste the host password in your clipboard from the browser.
+Your password is encrypted with a magic salt once you create a new host and you need that magic salt every time you want to copy/paste the host password in your clipboard from the browser. It can be a collaborative free tool to share access to multiple server access. Password Protected page can also be added!
 
 # Requirements
 
