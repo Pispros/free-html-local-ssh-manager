@@ -24,20 +24,21 @@ app.get('/', (req, res) => {
 
 
 app.post('/start-terminal', (req, res) => {
-    console.log(req.body);
-    exec(`gnome-terminal --command="${req.body.command}"`, (error, stdout, stderr) => {
+    exec(req.body.os.indexOf('Mac') !== -1 ? `open -a Terminal.app ${req.body.command}` : `gnome-terminal -- ${req.body.command}`, (error, stdout, stderr) => {
         if (error) {
             console.log(`error: ${error.message}`);
-            return;
+            return res.status(500).json({
+                message: 'Something went wrong!'
+            })
         }
         if (stderr) {
             console.log(`stderr: ${stderr}`);
             return res.status(500).json({
-                message: 'Quelque chose s\'est mal passé'
+                message: 'Something went wrong!'
             })
         }
-        return res.status(500).json({
-            message: 'Terminal lancé'
+        return res.status(200).json({
+            message: 'Terminal started!'
         })
     });
 })

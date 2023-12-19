@@ -85,17 +85,22 @@
     }
 
     async function copyCommandToClipboard(data) {
-        const response = await fetch('http://localhost:5555/start-terminal', {
-            method: 'POST',
-            body: JSON.stringify({
-                command: `ssh ${data?.user}@${data?.ip}`
-            }),
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        const message = await response.json();
-        showToast(message?.message);
+        try {
+            const response = await fetch('http://localhost:5555/start-terminal', {
+                method: 'POST',
+                body: JSON.stringify({
+                    os: navigator.platform,
+                    command: `ssh ${data?.user}@${data?.ip}`
+                }),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            const message = await response.json();
+            showToast(message?.message, 5000);
+        } catch (error) {
+            showToast("Please do not forget to start your shell server with 'npm run shell'", 10000);
+        }
     }
 
     function decrypt(encryptedText, password, salt) {
@@ -114,13 +119,13 @@
         navigator.clipboard.writeText(
             decrypt(data?.pwd, 'your_password_here', String(salt))
         );
-        showToast("Decrypted Password copied to clipboard! Have a good time hacking!");
+        showToast("Decrypted Password copied to clipboard! Have a good time hacking!", 5000);
         } catch (error) {
-            showToast("Incorrect magic salt!");
+            showToast("Incorrect magic salt!", 5000);
         }        
     }
 
-    const showToast = (message) => {
+    const showToast = (message, duration) => {
     const toastWrapper = document.createElement('div');
     toastWrapper.setAttribute('class', 'ToastWrapper')
     const messageContent = document.createElement('div');
@@ -131,7 +136,7 @@
     body.appendChild(toastWrapper);
     setTimeout(() => {
         toastWrapper.remove();
-    }, 5000);
+    }, duration);
 }
 
     getData();
