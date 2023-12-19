@@ -13,6 +13,12 @@ Install npm packages
 ```bash
  npm install
 ```
+
+Start Shell Server
+```bash
+ npm run shell
+```
+
 Add a new host
 ```bash
  npm run start
