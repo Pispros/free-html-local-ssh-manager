@@ -1,4 +1,4 @@
-# free-html-local-ssh-manager
+# free-html-local-ssh-manager (3 minutes install)
 Manage local ssh connections with HTML/Nodejs app ~ You can inspect the code and won't find any backdoor! <br>
 
 # Supported Os
@@ -12,6 +12,8 @@ Once you click on "command" button, a terminal is launched with ssh command to r
 Node server + Web Server (Nginx or Apache or whatever you like...)
 
 # Installation
+Clone repository in the publish directory of your web server (by default /var/www/html if not you must edit line 3 in fwordssh file before processing to installation)
+
 ```bash
  bash install.sh
 ```
