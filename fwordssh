@@ -1,5 +1,37 @@
 #!/bin/bash
+option=$1
 
-cd /var/www/html/fwordssh
+_launchShell() {
+    cd /var/www/html/fwordssh
 
-npm run shell
+    npm run shell
+}
+
+_addHost() {
+    cd /var/www/html/fwordssh
+
+    npm run start
+}
+
+_showOptions()
+{
+	echo
+	echo "----------------------- OPTIONS -------------------------"
+	echo
+	echo "Add host"
+	echo "synthax : fwordssh add"
+	echo
+	echo "Launch shell app"
+    echo "synthax : fwordssh app"
+}
+
+####################### Menu
+
+case $option in
+
+	add) _addHost ;;
+
+	app) _launchShell ;;
+	
+	*) _showOptions ;;
+esac
