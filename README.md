@@ -11,6 +11,11 @@ Once you click on "command" button, a terminal is launched with ssh command to r
 
 Node server + Web Server (Nginx or Apache or whatever you like...)
 
+# Installation
+```bash
+ bash install.sh
+```
+
 # Instructions
 
 Install npm packages
@@ -18,13 +23,14 @@ Install npm packages
  npm install
 ```
 
-Start Shell Server
-```bash
- npm run shell
-```
-
 Add a new host
 ```bash
  npm run start
 ```
+
+Run app (It should be autocompletable from your terminal)
+```bash
+ fwordssh
+```
+
 # Have a good time hacking!
