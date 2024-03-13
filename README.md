@@ -34,12 +34,12 @@ Install npm packages
 
 Add a new host
 ```bash
- npm run start
+ fwordssh add
 ```
 
 Run app (It should be autocompletable from your terminal)
 ```bash
- fwordssh
+ fwordssh app
 ```
 
 # Have a good time hacking!
