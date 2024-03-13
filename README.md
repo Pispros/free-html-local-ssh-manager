@@ -9,6 +9,11 @@ Once you click on "command" button, a terminal is launched with ssh command to r
 
 # Requirements
 
+Nodemon installed globally
+```bash
+ sudo npm install -g nodemon
+```
+
 Node server + Web Server (Nginx or Apache or whatever you like...)
 
 App uses port 5556
