@@ -63,6 +63,7 @@ html, body {
     padding: 10px;
     display: grid;
     grid-template-columns: 20% 80%;
+    margin-bottom: 40px;
 }
 
 .vps div:nth-child(1) {
