@@ -1,5 +1,5 @@
 # free-html-local-ssh-manager (3 minutes install)
-Manage encrypted local ssh connections with HTML/Nodejs app ~ You can inspect the code and won't find any backdoor! <br>
+Manage encrypted local ssh connections with HTML/Nodejs app ~ You can inspect the code and won't find any backdoor! :) <br>
 
 # Screen
 <img src="screen.png" />
@@ -14,17 +14,17 @@ It works perfectly with ssh-keys managed cloud VPS!
 
 # Requirements
 
-Nodemon installed globally
+1 - Nodemon installed globally
 ```bash
  sudo npm install -g nodemon
 ```
 
-Node server + Web Server (Nginx or Apache or whatever you like...)
+2 - Web Server (Nginx or Apache or whatever you like...)
 
-App uses port 5556
+Note : App uses port 5556
 
 # Installation
-Clone repository in the publish directory of your web server (by default /var/www/html if not you must edit line 3 in "fwordssh" file before processing to installation)
+Clone repository in the publish directory of your web server (by default /var/www/html if not you must edit line 3 in "fwordssh" file from this repository before processing to installation)
 
 ```bash
  bash install.sh
@@ -37,12 +37,12 @@ Install npm packages
  npm install
 ```
 
-Add a new host
+Add a new host (Just like your regular linux command :) )
 ```bash
  fwordssh add
 ```
 
-Run app (It should be autocompletable from your terminal)
+Run app (Just like your regular linux command :) )
 ```bash
  fwordssh app
 ```
