@@ -2,13 +2,13 @@
 option=$1
 
 _launchShell() {
-    cd /var/www/html/fwordssh
+    cd /var/www/html/free-html-local-ssh-manager
 
     npm run shell
 }
 
 _addHost() {
-    cd /var/www/html/fwordssh
+    cd /var/www/html/free-html-local-ssh-manager
 
     npm run start
 }
