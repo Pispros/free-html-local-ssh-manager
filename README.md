@@ -24,7 +24,7 @@ It works perfectly with ssh-keys managed cloud VPS!
 Note : App uses port 5556
 
 # Installation
-Clone repository in the publish directory of your web server (by default /var/www/html if not you must edit line 3 in "fwordssh" file from this repository before processing to installation)
+Clone repository in the publish directory of your web server (by default /var/www/html if not you must edit line 5 in "fwordssh" file from this repository to set the path to the directory where you cloned it.)
 
 ```bash
  bash install.sh
