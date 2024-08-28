@@ -32,19 +32,19 @@ Clone repository in the publish directory of your web server (by default /var/ww
 
 # Instructions
 
-Install npm packages
+1 - Install npm packages
 ```bash
  npm install
 ```
 
-Add a new host (Just like your regular linux command :) )
-```bash
- fwordssh add
-```
-
-Run app (Just like your regular linux command :) )
+2 - Run app (Just like your regular linux command :) )
 ```bash
  fwordssh app
+```
+
+3 - Add a new host (Just like your regular linux command :) )
+```bash
+ fwordssh add
 ```
 
 # Have a good time hacking!
