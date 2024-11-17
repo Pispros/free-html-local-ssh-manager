@@ -113,6 +113,18 @@ html, body {
     margin-top: 10px;
 }
 
+
+.serverName svg {
+    margin-left: 10px;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+}
+
+.serverName svg path {
+    fill: white;
+}
+
 /*  */
 .ToastWrapper
 {
