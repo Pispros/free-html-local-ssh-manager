@@ -19,12 +19,12 @@ It works perfectly with ssh-keys managed cloud VPS!
  sudo npm install -g nodemon
 ```
 
-2 - Web Server (Nginx or Apache or whatever you like...)
+2 - Web Server (Nginx or Apache or whatever you like that reads website by folders)
 
 Note : App uses port 5556
 
 # Installation
-Clone repository in the publish directory of your web server (by default /var/www/html if not you must edit line 5 in "fwordssh" file from this repository to set the path to the directory where you cloned it.)
+Clone repository in the publish directory of your web server (by default /var/www/html if not you must edit line 5 & 11 in "fwordssh" file from this repository to set the path to the directory where you cloned it.)
 
 ```bash
  bash install.sh
