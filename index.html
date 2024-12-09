@@ -116,7 +116,7 @@
             const message = await response.json();
             showToast(message?.message, 5000);
         } catch (error) {
-            showToast("Please do not forget to start your shell server with 'npm run shell'", 10000);
+            showToast("Server not found! please run command 'fwordssh app'", 10000);
         }
     }
 
