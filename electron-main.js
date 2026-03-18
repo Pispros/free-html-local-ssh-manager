@@ -1,23 +1,87 @@
 /**
  * Electron main process – FWORD SSH Manager
  *
- * Workflow:
- *  1. Spawn bash.js (the Express + WebSocket backend) as a hidden child
- *     process using ELECTRON_RUN_AS_NODE so Electron's own Node binary is
- *     reused without needing a separate system-node installation.
- *  2. Poll localhost:5556 until the server answers (up to ~12 s).
- *  3. Open the BrowserWindow loading index.html.
- *
- * The backend process is killed when the Electron app exits.
+ * Starts the Express + WebSocket backend by requiring bash.js directly
+ * inside this process so all node_modules from the asar are available.
+ * Polls localhost:5556 until the server is ready, then opens the window.
  */
 
 'use strict';
 
 const { app, BrowserWindow } = require('electron');
-const { spawn }              = require('child_process');
 const http                   = require('http');
 const path                   = require('path');
-const fs                     = require('fs');
+
+const PORT = 5556;
+let mainWindow = null;
+
+function startServer() {
+  // assets/json is asarUnpacked so content.json is writable on disk.
+  // app.getAppPath() returns the asar path when packaged, or the project
+  // root in dev — replacing 'app.asar' with 'app.asar.unpacked' gives the
+  // unpacked directory in both cases.
+  const appPath = app.getAppPath();
+  const dataDir = appPath.endsWith('app.asar')
+    ? path.join(appPath.replace('app.asar', 'app.asar.unpacked'), 'assets', 'json')
+    : path.join(appPath, 'assets', 'json');
+
+  process.env.FWORDSSH_DATA_DIR = dataDir;
+  require('./bash.js');
+}
+
+function waitForServer(maxAttempts = 30, intervalMs = 400) {
+  return new Promise(resolve => {
+    let attempts = maxAttempts;
+    (function poll() {
+      if (attempts-- <= 0) {
+        console.warn('[backend] server did not start in time – opening window anyway');
+        return resolve();
+      }
+      const req = http.get(`http://127.0.0.1:${PORT}/`, res => {
+        res.resume();
+        resolve();
+      });
+      req.setTimeout(300);
+      req.on('error',   () => setTimeout(poll, intervalMs));
+      req.on('timeout', () => { req.destroy(); setTimeout(poll, intervalMs); });
+    })();
+  });
+}
+
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width:           1280,
+    height:          820,
+    minWidth:        900,
+    minHeight:       600,
+    backgroundColor: '#050709',
+    autoHideMenuBar: true,
+    title:           'FWORD // SSH',
+    icon:            path.join(app.getAppPath(), 'assets/img/icon.png'),
+    webPreferences: {
+      nodeIntegration:  false,
+      contextIsolation: true,
+    },
+  });
+
+  mainWindow.loadFile(path.join(app.getAppPath(), 'index.html'));
+  mainWindow.on('closed', () => { mainWindow = null; });
+}
+
+app.whenReady().then(async () => {
+  startServer();
+  await waitForServer();
+  createWindow();
+});
+
+app.on('activate', () => {
+  if (!mainWindow) createWindow();
+});
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') app.quit();
+});
+
 
 const PORT = 5556;
 
