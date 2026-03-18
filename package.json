@@ -2,22 +2,63 @@
   "name": "fwordssh",
   "version": "1.0.0",
   "description": "Your local ssh manager",
-  "main": "server.js",
+  "main": "electron-main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
-    "shell": "nodemon bash.js"
+    "shell": "nodemon bash.js",
+    "electron": "electron .",
+    "electron:dev": "electron . --inspect=5858",
+    "rebuild": "electron-builder install-app-deps",
+    "build:linux": "electron-builder --linux",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac"
   },
-  "author": "ninjamer AKA Pispros",
+  "build": {
+    "appId": "com.fwordssh.app",
+    "productName": "FWORD SSH",
+    "icon": "assets/img/icon.png",
+    "files": [
+      "electron-main.js",
+      "index.html",
+      "assets/**/*",
+      "!assets/fonts/.gitkeep"
+    ],
+    "extraResources": [
+      { "from": "bash.js",   "to": "bash.js" },
+      { "from": "assets/json/content.json", "to": "app/assets/json/content.json" }
+    ],
+    "linux": {
+      "target": ["AppImage"],
+      "category": "Utility",
+      "icon": "assets/img/icon.png"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "assets/img/icon.png"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/img/icon.png"
+    }
+  },
+  "author": {
+    "name": "Pispros",
+    "email": "prosper.pissan@naanocorp.tech"
+  },
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "node-pty": "^1.1.0",
-    "nodemon": "^3.0.2",
     "prompt-sync": "^4.2.0",
     "ws": "^8.19.0",
     "xterm": "^5.3.0"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0",
+    "nodemon": "^3.0.2"
   }
 }
