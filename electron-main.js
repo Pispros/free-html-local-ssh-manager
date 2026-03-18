@@ -36,14 +36,20 @@ let serverProcess = null;
 function seedDataDir() {
   const dataDir = app.getPath('userData');
   const dest    = path.join(dataDir, 'content.json');
-  if (!fs.existsSync(dest)) {
-    const src = path.join(app.getAppPath(), 'assets/json/content.json');
-    try {
-      fs.copyFileSync(src, dest);
-      console.log('[data] seeded content.json to', dest);
-    } catch {
-      fs.writeFileSync(dest, '[]', 'utf8');   // no prior data — start empty
-    }
+  // Always overwrite from the bundled file so that rebuilding the app with
+  // an updated content.json is immediately reflected on next launch.
+  // Servers are added via `node server.js` which writes to the project file,
+  // so the bundled copy is always the source of truth.
+  const src = app.isPackaged
+    ? path.join(process.resourcesPath, 'app/assets/json/content.json')
+    : path.join(__dirname, 'assets/json/content.json');
+  try {
+    fs.mkdirSync(dataDir, { recursive: true });
+    fs.copyFileSync(src, dest);
+    console.log('[data] synced content.json to', dest);
+  } catch (e) {
+    console.error('[data] could not sync content.json:', e.message);
+    if (!fs.existsSync(dest)) fs.writeFileSync(dest, '[]', 'utf8');
   }
   return dataDir;
 }
