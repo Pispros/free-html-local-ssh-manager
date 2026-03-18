@@ -30,24 +30,6 @@ let serverProcess = null;
    so native addons (node-pty) compiled for Electron's ABI work
    correctly in both dev and a packaged app.
 ───────────────────────────────────────────────────────────────── */
-/* ─────────────────────────────────────────────────────────────────
-   Seed content.json to a writable userData directory on first launch
-───────────────────────────────────────────────────────────────── */
-function seedDataDir() {
-  const dataDir = app.getPath('userData');
-  const dest    = path.join(dataDir, 'content.json');
-  if (!fs.existsSync(dest)) {
-    const src = path.join(app.getAppPath(), 'assets/json/content.json');
-    try {
-      fs.copyFileSync(src, dest);
-      console.log('[data] seeded content.json to', dest);
-    } catch {
-      fs.writeFileSync(dest, '[]', 'utf8');   // no prior data — start empty
-    }
-  }
-  return dataDir;
-}
-
 function startServer(dataDir) {
   // In a packaged app electron-builder copies bash.js to resources/.
   // In dev it lives right next to this file.
@@ -125,7 +107,12 @@ function createWindow() {
    App lifecycle
 ───────────────────────────────────────────────────────────────── */
 app.whenReady().then(async () => {
-  const dataDir = app.isPackaged ? seedDataDir() : null;
+  // Always point at the live assets/json directory so that running
+  // `node server.js` immediately reflects in the running app via SSE.
+  // In a packaged app, assets/json is asarUnpacked (writable on disk).
+  const dataDir = app.isPackaged
+    ? path.join(process.resourcesPath, 'app.asar.unpacked', 'assets', 'json')
+    : path.join(__dirname, 'assets', 'json');
   startServer(dataDir);
   await waitForServer();
   createWindow();
