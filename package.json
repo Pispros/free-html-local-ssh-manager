@@ -27,9 +27,6 @@
     "asarUnpack": [
       "assets/json/**"
     ],
-    "extraResources": [
-      { "from": "bash.js", "to": "bash.js" }
-    ],
     "linux": {
       "target": ["AppImage"],
       "category": "Utility",
