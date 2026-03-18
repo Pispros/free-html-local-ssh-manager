@@ -226,7 +226,7 @@ let sshList = [];
 
 async function getData() {
   try {
-    const r = await fetch('assets/json/content.json');
+    const r = await fetch('http://localhost:5556/servers');
     sshList  = await r.json();
   } catch {
     // demo fallback
@@ -234,6 +234,13 @@ async function getData() {
   }
   renderVpsList();
 }
+
+// Live-reload: re-fetch the server list whenever content.json changes
+(function watchServers() {
+  const es = new EventSource('http://localhost:5556/servers/watch');
+  es.onmessage = (e) => { if (e.data === 'update') getData(); };
+  es.onerror   = () => { es.close(); setTimeout(watchServers, 3000); };
+})();
 
 function renderVpsList() {
   const grid = document.getElementById('vps-grid');

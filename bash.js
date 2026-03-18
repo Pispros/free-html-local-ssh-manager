@@ -15,12 +15,39 @@ const wss    = new WebSocketServer({ server });
 const PORT   = 5556;
 const HOME   = os.homedir();
 
+// When running inside the packaged Electron app the main process passes
+// FWORDSSH_DATA_DIR pointing to a writable userData folder. In dev/browser
+// mode we fall back to the local assets/json directory.
+const CONTENT_PATH = process.env.FWORDSSH_DATA_DIR
+  ? path.join(process.env.FWORDSSH_DATA_DIR, 'content.json')
+  : path.join(__dirname, 'assets/json/content.json');
+
 app.use(cors({ origin: '*' }));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 // ── Health ────────────────────────────────────────────────────────
 app.get('/', (_req, res) => res.json({ message: 'Service running' }));
+
+// ── Server list (read) ───────────────────────────────────────────
+app.get('/servers', (_req, res) => {
+    try {
+        const data = fs.readFileSync(CONTENT_PATH, 'utf8');
+        res.json(JSON.parse(data));
+    } catch {
+        res.json([]);
+    }
+});
+
+// ── Server list (write) ──────────────────────────────────────────
+app.put('/servers', (req, res) => {
+    try {
+        fs.writeFileSync(CONTENT_PATH, JSON.stringify(req.body), 'utf8');
+        res.json({ message: 'Saved' });
+    } catch (e) {
+        res.status(500).json({ message: e.message });
+    }
+});
 
 // ── Legacy native terminal ────────────────────────────────────────
 app.post('/start-terminal', (req, res) => {
@@ -240,6 +267,25 @@ wss.on('connection', (ws, req) => {
     });
     ws.on('close', () => { try { ptyProcess.kill(); } catch {} });
     ws.on('error', ()  => { try { ptyProcess.kill(); } catch {} });
+});
+
+// ── SSE: notify clients when content.json changes ───────────────
+const sseClients = new Set();
+
+app.get('/servers/watch', (req, res) => {
+    res.setHeader('Content-Type',  'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection',    'keep-alive');
+    res.flushHeaders();
+    res.write('data: connected\n\n');
+    sseClients.add(res);
+    req.on('close', () => sseClients.delete(res));
+});
+
+fs.watch(CONTENT_PATH, { persistent: false }, () => {
+    for (const res of sseClients) {
+        try { res.write('data: update\n\n'); } catch { sseClients.delete(res); }
+    }
 });
 
 server.listen(PORT, () => {

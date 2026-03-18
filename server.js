@@ -1,7 +1,13 @@
 const prompt = require("prompt-sync")({ sigint: true });
 const crypto = require('crypto');
-const fs = require('fs');
+const fs     = require('fs');
+const path   = require('path');
 const customPasswordYouCanEdit = "your_password_here"; // you can edit or not
+
+// Supports running both from source and from the packaged Electron app
+const CONTENT_PATH = process.env.FWORDSSH_DATA_DIR
+  ? path.join(process.env.FWORDSSH_DATA_DIR, 'content.json')
+  : 'assets/json/content.json';
 
 const newServerName = prompt("What's your server name ? ");
 const newIp = prompt("Enter VPS Ip ? ");
@@ -9,7 +15,7 @@ const newUser = prompt("Enter VPS User ? ");
 const newPassword = prompt("Enter VPS Password ? ");
 const newSalt = prompt("Enter your magic salt. Attention you need this to recover this VPS password ? ")
 
-fs.readFile('assets/json/content.json', 'utf8', (err, data) => {
+fs.readFile(CONTENT_PATH, 'utf8', (err, data) => {
     if (err) {
       console.error('Error reading the file:', err);
       return;
@@ -22,7 +28,7 @@ fs.readFile('assets/json/content.json', 'utf8', (err, data) => {
         pwd: encrypt(String(newPassword), customPasswordYouCanEdit, String(newSalt))
     }]
 
-    fs.writeFile('assets/json/content.json', JSON.stringify(newData), 'utf8', (err) => {
+    fs.writeFile(CONTENT_PATH, JSON.stringify(newData), 'utf8', (err) => {
         if (err) {
           console.error('Error writing to the file:', err);
           return;
