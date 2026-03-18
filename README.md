@@ -1,7 +1,7 @@
 # free-html-local-ssh-manager (3 minutes install)
 Manage encrypted local ssh connections with HTML/Nodejs app ~ You can inspect the code and won't find any backdoor! :) <br>
 
-# Screen
+# Screens
 <img src="screen.png" />
 <img src="screen-2.png" />
 
