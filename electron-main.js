@@ -17,6 +17,7 @@ const { app, BrowserWindow } = require('electron');
 const { spawn }              = require('child_process');
 const http                   = require('http');
 const path                   = require('path');
+const fs                     = require('fs');
 
 const PORT = 5556;
 
@@ -29,15 +30,36 @@ let serverProcess = null;
    so native addons (node-pty) compiled for Electron's ABI work
    correctly in both dev and a packaged app.
 ───────────────────────────────────────────────────────────────── */
-function startServer() {
+/* ─────────────────────────────────────────────────────────────────
+   Seed content.json to a writable userData directory on first launch
+───────────────────────────────────────────────────────────────── */
+function seedDataDir() {
+  const dataDir = app.getPath('userData');
+  const dest    = path.join(dataDir, 'content.json');
+  if (!fs.existsSync(dest)) {
+    const src = path.join(app.getAppPath(), 'assets/json/content.json');
+    try {
+      fs.copyFileSync(src, dest);
+      console.log('[data] seeded content.json to', dest);
+    } catch {
+      fs.writeFileSync(dest, '[]', 'utf8');   // no prior data — start empty
+    }
+  }
+  return dataDir;
+}
+
+function startServer(dataDir) {
   // In a packaged app electron-builder copies bash.js to resources/.
   // In dev it lives right next to this file.
   const scriptPath = app.isPackaged
     ? path.join(process.resourcesPath, 'bash.js')
     : path.join(__dirname, 'bash.js');
 
+  const env = { ...process.env, ELECTRON_RUN_AS_NODE: '1' };
+  if (dataDir) env.FWORDSSH_DATA_DIR = dataDir;
+
   serverProcess = spawn(process.execPath, [scriptPath], {
-    env:   { ...process.env, ELECTRON_RUN_AS_NODE: '1' },
+    env,
     stdio: 'inherit',   // forward server logs to the Electron console
   });
 
@@ -103,7 +125,8 @@ function createWindow() {
    App lifecycle
 ───────────────────────────────────────────────────────────────── */
 app.whenReady().then(async () => {
-  startServer();
+  const dataDir = app.isPackaged ? seedDataDir() : null;
+  startServer(dataDir);
   await waitForServer();
   createWindow();
 });
