@@ -24,9 +24,11 @@
       "assets/**/*",
       "!assets/fonts/.gitkeep"
     ],
+    "asarUnpack": [
+      "assets/json/**"
+    ],
     "extraResources": [
-      { "from": "bash.js",   "to": "bash.js" },
-      { "from": "assets/json/content.json", "to": "app/assets/json/content.json" }
+      { "from": "bash.js", "to": "bash.js" }
     ],
     "linux": {
       "target": ["AppImage"],
