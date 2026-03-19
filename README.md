@@ -3,6 +3,7 @@
 > Manage encrypted local SSH connections with an HTML / Node.js app.  
 > You can inspect every line of code — no backdoors, no telemetry. 🙂
 
+<img src="screen.gif" />
 <img src="screen.png" />
 <img src="screen-2.png" />
 
