@@ -1,80 +1,209 @@
-# free-html-local-ssh-manager (3 minutes install)
-Manage encrypted local ssh connections with HTML/Nodejs app ~ You can inspect the code and won't find any backdoor! :) <br>
+# FWORD SSH
 
-# Screens
+> Manage encrypted local SSH connections with an HTML / Node.js app.  
+> You can inspect every line of code — no backdoors, no telemetry. 🙂
+
 <img src="screen.png" />
 <img src="screen-2.png" />
 
-# Supported Os
-Linux | MacOs
+---
 
-# Fonctionnalities & Some ideas :)
-Once you click on "command" button, a terminal is launched with ssh command to remote host. Your password is encrypted with a magic salt once you create a new host and you need that magic salt every time you click on password button which will copy/paste the host password in your clipboard from the browser. It can be a collaborative free tool to share access to multiple servers. Password Protected page can also be added! 
+## Supported OS
 
-It works perfectly with ssh-keys managed cloud VPS!
+| Platform | Browser mode | Desktop (Electron) |
+|----------|-------------|-------------------|
+| **Linux**  | ✅ | ✅ AppImage |
+| **macOS**  | ✅ | ✅ DMG |
 
-### New features
-- **In-browser SSH terminal** — Click "Connect" on any server card to open a live xterm.js terminal session directly in the browser via WebSocket (port 5556), no separate SSH client needed
-- **Multi-tile workspace** — Multiple SSH sessions open simultaneously as resizable tiles with automatic tiling layout (1→2→grid)
-- **Drag-to-swap** — Drag any terminal tile onto another to swap their positions in the workspace
-- **Fullscreen tile** — Expand any single terminal to fill the entire workspace and restore it back
+---
+
+## Features
+
+- **In-browser SSH terminal** — Connect to any server directly from the browser via a live xterm.js / WebSocket session (port 5556)
+- **Multi-tile workspace** — Multiple SSH sessions open simultaneously with automatic tiling layout (1 → 2 → grid)
+- **Drag-to-swap** — Drag any terminal tile onto another to swap positions
+- **Fullscreen tile** — Expand a single terminal to fill the workspace and restore it back
 - **Session pills** — Quick-switch between open terminals from the top bar
-- **Terminal color palette** — 5 built-in themes (Fword Dark, Dracula, Nord, Gruvbox, Tokyo Night) with a full 18-color customizer; palette is saved to localStorage and applied live to all open terminals
-- **IP reveal toggle** — Server IPs are masked by default; click the eye icon on a card to reveal/hide
-- **SSH command copy** — Copy the `ssh user@host` command to clipboard in one click
-- **Hacker rain background** — Animated matrix-style katakana/hex rain canvas on the main page
-- **Fully offline** — All JS libraries (xterm.js, xterm-addon-fit, browser-crypto) and fonts (IBM Plex Mono, Bebas Neue, Syne) are bundled locally; no CDN requests at runtime
+- **Terminal color palette** — 5 built-in themes (Fword Dark, Dracula, Nord, Gruvbox, Tokyo Night) + full 18-color customizer with live hex editing; save unlimited custom palettes to localStorage
+- **IP reveal toggle** — Server IPs are masked by default; click the eye icon to reveal/hide
+- **SSH command copy** — Copy `ssh user@host` to clipboard in one click
+- **Encrypted passwords** — Passwords are AES-256-CBC encrypted with a magic salt; the salt is required each time you copy a password
+- **Hacker rain background** — Animated matrix-style katakana / hex rain canvas
+- **Fully offline** — xterm.js, xterm-addon-fit, browser-crypto and all fonts are bundled locally — no CDN requests at runtime
 
-# Asset structure
+---
+
+## Asset structure
+
 ```
 assets/
   css/
-    index.css          # app styles
-    xterm.css          # terminal stylesheet (local)
-    google-fonts.css   # self-hosted font faces
-  fonts/               # woff2 font files (IBM Plex Mono, Bebas Neue, Syne)
+    index.css               # app styles
+    xterm.css               # terminal stylesheet (local)
+    google-fonts.css        # self-hosted font faces
+  fonts/                    # woff2 files (IBM Plex Mono, Bebas Neue, Syne)
   js/
-    index.js           # app logic
-    xterm.js           # xterm.js v5.3.0 (local)
-    xterm-addon-fit.js # fit addon (local)
-    browser-crypto.min.js # AES-256-CBC decryption (local)
+    index.js                # app logic
+    xterm.js                # xterm.js v5.3.0 (local)
+    xterm-addon-fit.js      # fit addon (local)
+    browser-crypto.min.js   # AES-256-CBC decryption (local)
   json/
-    content.json       # server list
+    content.json            # server list
+electron-main.js            # Electron entry point
+bash.js                     # Node backend (WebSocket SSH bridge, port 5556)
+server.js                   # Standalone HTTP server (browser mode)
 ```
 
-# Requirements
+---
 
-1 - Nodemon installed globally
+## Browser mode (Linux & macOS)
+
+Runs the app as a regular website served by Node.js — no Electron needed.
+
+### Requirements
+
+- Node.js ≥ 18
+- Nodemon (global)
+- A web server pointing at this directory (Nginx / Apache / etc.) **or** use the built-in server
+
 ```bash
- sudo npm install -g nodemon
+sudo npm install -g nodemon
 ```
 
-2 - Web Server (Nginx or Apache or whatever you like that reads website by folders)
+> The app always uses **port 5556** for its WebSocket SSH bridge.
 
-Note : App uses port 5556
+### Install
 
-# Installation
-Clone repository in the publish directory of your web server (by default /var/www/html if not you must edit line 5 & 11 in "fwordssh" file from this repository to set the path to the directory where you cloned it.)
+Clone into your web server's publish directory (default `/var/www/html`).  
+If you use a different path, edit lines 5 & 11 in the `fwordssh` file.
 
 ```bash
- bash install.sh
+bash install.sh
 ```
 
-# Instructions
+### Usage
 
-1 - Install npm packages
 ```bash
- npm install
+# Install Node dependencies
+npm install
+
+# Start the backend
+fwordssh app
+
+# Add a new SSH host
+fwordssh add
 ```
 
-2 - Run app (Just like your regular linux command :) )
+---
+
+## Desktop app — Linux (Electron → AppImage)
+
+### Prerequisites
+
 ```bash
- fwordssh app
+# Node.js ≥ 18 + npm
+sudo apt install nodejs npm          # Debian/Ubuntu
+# or
+sudo pacman -S nodejs npm            # Arch
+
+# Yarn (used by the build scripts)
+npm install -g yarn
+
+# Native build tools required by node-pty
+sudo apt install build-essential python3   # Debian/Ubuntu
+# or
+sudo pacman -S base-devel python           # Arch
 ```
 
-3 - Add a new host (Just like your regular linux command :) )
+### Build
+
 ```bash
- fwordssh add
+# 1. Install dependencies
+npm install
+
+# 2. Build the AppImage
+yarn build:linux
+# Output: dist/FWORD SSH-*.AppImage
 ```
 
-# Have a good time hacking!
+### Install to app launcher (optional)
+
+```bash
+bash install-desktop.sh
+# Registers a .desktop file and installs the AppImage to ~/.local/bin
+# so FWORD SSH appears in GNOME / KDE / XFCE app launchers
+```
+
+### Uninstall desktop integration
+
+```bash
+bash uninstall-desktop.sh
+```
+
+### Run without installing
+
+```bash
+chmod +x "dist/FWORD SSH-*.AppImage"
+./dist/FWORD\ SSH-*.AppImage
+```
+
+---
+
+## Desktop app — macOS (Electron → DMG)
+
+### Prerequisites
+
+```bash
+# Node.js ≥ 18 (recommended via nvm or Homebrew)
+brew install node
+
+# Yarn
+npm install -g yarn
+
+# Xcode Command Line Tools (required for node-pty native compilation)
+xcode-select --install
+```
+
+### Build
+
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Build the DMG
+yarn build:mac
+# Output: dist/FWORD SSH-*.dmg
+```
+
+### Install
+
+```bash
+open dist/FWORD\ SSH-*.dmg
+# Drag FWORD SSH.app to /Applications in the installer window
+```
+
+### Uninstall
+
+```bash
+# Drag FWORD SSH.app from /Applications to the Trash
+# or:
+rm -rf /Applications/FWORD\ SSH.app
+```
+
+---
+
+## Development (Electron with hot-reload)
+
+```bash
+npm install
+
+# Terminal 1 — backend with auto-restart
+nodemon bash.js
+
+# Terminal 2 — Electron window
+npm run electron:dev    # opens DevTools via --inspect=5858
+```
+
+---
+
+## Have a good time hacking!

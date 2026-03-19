@@ -4,28 +4,28 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:       #060b13;
-  --bg2:      #0b1420;
-  --surface:  #101827;
-  --surface2: #162035;
-  --border:   rgba(0,255,159,.12);
-  --border2:  rgba(0,255,159,.25);
-  --accent:   #00ff9f;
-  --accent2:  #00c86e;
-  --dim:      rgba(0,255,159,.35);
+  --bg:       #050709;
+  --bg2:      #0a0e14;
+  --surface:  #0d1219;
+  --surface2: #121a24;
+  --border:   rgba(0,255,100,.12);
+  --border2:  rgba(0,255,100,.25);
+  --accent:   #00ff64;
+  --accent2:  #00c84e;
+  --dim:      rgba(0,255,100,.35);
   --danger:   #ff3355;
-  --warn:     #ffc107;
-  --text:     #c8e6c9;
-  --text-mid: #4d7a58;
-  --text-dim: #1e3248;
+  --warn:     #ffb300;
+  --text:     #d0e8d0;
+  --text-mid: #567056;
+  --text-dim: #2a3a2a;
   --font-mono:'IBM Plex Mono', monospace;
   --font-disp:'Bebas Neue', sans-serif;
   --font-ui:  'Syne', sans-serif;
   --bar-h:    34px;
   --gap:      3px;
   /* xterm palette — overridden by saved theme */
-  --xt-bg:    #060b13;
-  --xt-fg:    #c8e6c9;
+  --xt-bg:    #050709;
+  --xt-fg:    #d0e8d0;
 }
 
 html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font-mono); cursor: default; }
@@ -332,13 +332,13 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .preset-add {
   border-style: dashed;
   color: var(--accent);
-  border-color: rgba(0,255,159,.4);
+  border-color: rgba(0,255,100,.4);
   opacity: .75;
 }
 .preset-add:hover {
   opacity: 1;
   border-color: var(--accent);
-  background: rgba(0,255,159,.06);
+  background: rgba(0,255,100,.06);
   color: var(--accent);
 }
 
@@ -366,7 +366,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   position: relative;
   transition: transform .1s, box-shadow .1s;
 }
-.color-swatch:hover { transform: scale(1.1); box-shadow: 0 0 0 2px rgba(0,255,159,.3); }
+.color-swatch:hover { transform: scale(1.1); box-shadow: 0 0 0 2px rgba(0,255,100,.3); }
 
 .color-lbl {
   font-size: 10px;
@@ -384,10 +384,10 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   height: 26px;
   padding: 0 8px;
   /* dark forced via JS — these are fallbacks */
-  background: #0d1520;
-  border: 1px solid rgba(0,255,159,.15);
+  background: #050709;
+  border: 1px solid rgba(0,255,100,.15);
   border-radius: 4px;
-  color: #c8e6c9;
+  color: #d0e8d0;
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: .07em;
@@ -395,10 +395,10 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   transition: border-color .14s, box-shadow .14s;
   cursor: text;
 }
-.color-hex-input:hover { border-color: rgba(0,255,159,.3); }
+.color-hex-input:hover { border-color: rgba(0,255,100,.3); }
 .color-hex-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(0,255,159,.1);
+  box-shadow: 0 0 0 2px rgba(0,255,100,.1);
 }
 
 /* color picker trigger button */
@@ -414,7 +414,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   transition: border-color .12s, color .12s, background .12s;
   padding: 0;
 }
-.color-pick-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,255,159,.06); }
+.color-pick-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,255,100,.06); }
 
 .modal-footer {
   display:flex; gap:8px; justify-content:flex-end;
@@ -425,7 +425,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 /* ── Generic dialog ─────────────────────────────────────── */
 #dialog-overlay {
   position: fixed; inset:0; z-index: 9600;
-  background: rgba(6,11,19,.88);
+  background: rgba(5,7,9,.85);
   backdrop-filter: blur(8px);
   display: none;
   align-items: center; justify-content: center;
@@ -457,33 +457,33 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   /* force dark bg even in Electron/Chromium */
   appearance: none;
   -webkit-appearance: none;
-  background: #0d1520;
-  -webkit-background-color: #0d1520;
+  background: #050709;
+  -webkit-background-color: #050709;
   background-clip: padding-box;
-  border: 1px solid rgba(0,255,159,.2);
+  border: 1px solid rgba(0,255,100,.2);
   border-radius: 5px;
-  color: #c8e6c9;
-  -webkit-text-fill-color: #c8e6c9;
-  caret-color: #00ff9f;
+  color: #d0e8d0;
+  -webkit-text-fill-color: #d0e8d0;
+  caret-color: #00ff64;
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: .05em;
   outline: none;
   transition: border-color .18s, box-shadow .18s;
 }
-.dlg-field:hover { border-color: rgba(0,255,159,.35); }
+.dlg-field:hover { border-color: rgba(0,255,100,.35); }
 .dlg-field:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(0,255,159,.12), 0 0 12px rgba(0,255,159,.08);
-  background: #0f1a28;
+  box-shadow: 0 0 0 3px rgba(0,255,100,.12), 0 0 12px rgba(0,255,100,.08);
+  background: #0a0e14;
 }
-.dlg-field::placeholder { color: rgba(0,255,159,.25); }
+.dlg-field::placeholder { color: rgba(0,255,100,.25); }
 /* kill Chromium autofill yellow wash */
 .dlg-field:-webkit-autofill,
 .dlg-field:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 100px #0d1520 inset !important;
-  -webkit-text-fill-color: #c8e6c9 !important;
-  caret-color: #00ff9f;
+  -webkit-box-shadow: 0 0 0 100px #050709 inset !important;
+  -webkit-text-fill-color: #d0e8d0 !important;
+  caret-color: #00ff64;
 }
 
 .hdr-btn.danger-btn {

@@ -15,17 +15,17 @@
   }
 
   function draw() {
-    ctx.fillStyle = 'rgba(6,11,19,.065)';
+    ctx.fillStyle = 'rgba(5,7,9,.065)';
     ctx.fillRect(0, 0, W, H);
 
     for (let i = 0; i < cols; i++) {
       const y = drops[i] * 16;
       // leading char — bright
       ctx.font = '13px "IBM Plex Mono", monospace';
-      ctx.fillStyle = `rgba(180,255,210,${0.7 + Math.random()*0.3})`;
+      ctx.fillStyle = `rgba(180,255,180,${0.7 + Math.random()*0.3})`;
       ctx.fillText(CHARS[Math.floor(Math.random() * CHARS.length)], i * 16, y);
       // trailing char — dim green
-      ctx.fillStyle = `rgba(0,${Math.floor(160 + Math.random()*95)},${Math.floor(80 + Math.random()*60)},${0.15 + Math.random()*0.25})`;
+      ctx.fillStyle = `rgba(0,${Math.floor(160 + Math.random()*95)},${Math.floor(40 + Math.random()*40)},${0.15 + Math.random()*0.25})`;
       ctx.fillText(CHARS[Math.floor(Math.random() * CHARS.length)], i * 16, y - 16);
 
       drops[i] += .35 + Math.random() * .5;
@@ -72,10 +72,10 @@ function showDialog({ title = '', message = '', input = false, placeholder = '',
     inp.value       = '';
     // Force input theme inline so Electron/Chromium native styles can't override
     Object.assign(inp.style, {
-      background:          '#0d1520',
-      backgroundColor:     '#0d1520',
-      color:               '#c8e6c9',
-      border:              '1px solid rgba(0,255,159,.22)',
+      background:          '#050709',
+      backgroundColor:     '#050709',
+      color:               '#d0e8d0',
+      border:              '1px solid rgba(0,255,100,.22)',
       borderRadius:        '5px',
       fontFamily:          "'IBM Plex Mono', monospace",
       fontSize:            '12px',
@@ -85,7 +85,7 @@ function showDialog({ title = '', message = '', input = false, placeholder = '',
       width:               '100%',
       outline:             'none',
       boxSizing:           'border-box',
-      caretColor:          '#00ff9f',
+      caretColor:          '#00ff64',
     });
     okBtn.className   = 'hdr-btn ' + (danger ? 'danger-btn' : 'accent');
     okBtn.textContent = danger ? 'Delete' : 'OK';
@@ -98,7 +98,7 @@ function showDialog({ title = '', message = '', input = false, placeholder = '',
       left:            '0',
       width:           '100vw',
       height:          '100vh',
-      background:      'rgba(6,11,19,.9)',
+      background:      'rgba(5,7,9,.85)',
       backdropFilter:  'blur(8px)',
       WebkitBackdropFilter: 'blur(8px)',
       alignItems:      'center',
@@ -108,8 +108,8 @@ function showDialog({ title = '', message = '', input = false, placeholder = '',
     Object.assign(modal.style, {
       width:        '360px',
       maxWidth:     'calc(100vw - 32px)',
-      background:   '#101827',
-      border:       '1px solid rgba(0,255,159,.25)',
+      background:   '#0d1219',
+      border:       '1px solid rgba(0,255,100,.25)',
       borderRadius: '8px',
       overflow:     'hidden',
       flexShrink:   '0',
@@ -118,11 +118,11 @@ function showDialog({ title = '', message = '', input = false, placeholder = '',
     if (input) setTimeout(() => {
       inp.focus();
       inp.addEventListener('focus', () => {
-        inp.style.borderColor = '#00ff9f';
-        inp.style.boxShadow   = '0 0 0 3px rgba(0,255,159,.12), 0 0 12px rgba(0,255,159,.08)';
+        inp.style.borderColor = '#00ff64';
+        inp.style.boxShadow   = '0 0 0 3px rgba(0,255,100,.12), 0 0 12px rgba(0,255,100,.08)';
       }, { once: false });
       inp.addEventListener('blur', () => {
-        inp.style.borderColor = 'rgba(0,255,159,.22)';
+        inp.style.borderColor = 'rgba(0,255,100,.22)';
         inp.style.boxShadow   = 'none';
       }, { once: false });
     }, 60);
@@ -380,12 +380,12 @@ function buildPaletteModal() {
     hexInp.spellcheck  = false;
     hexInp.autocomplete = 'off';
     Object.assign(hexInp.style, {
-      background:      '#0d1520',
-      backgroundColor: '#0d1520',
-      color:           '#c8e6c9',
-      WebkitTextFillColor: '#c8e6c9',
-      caretColor:      '#00ff9f',
-      border:          '1px solid rgba(0,255,159,.18)',
+      background:      '#050709',
+      backgroundColor: '#050709',
+      color:           '#d0e8d0',
+      WebkitTextFillColor: '#d0e8d0',
+      caretColor:      '#00ff64',
+      border:          '1px solid rgba(0,255,100,.18)',
       borderRadius:    '4px',
       fontFamily:      "'IBM Plex Mono', monospace",
       fontSize:        '11px',
@@ -398,11 +398,11 @@ function buildPaletteModal() {
       minWidth:        '0',
     });
     hexInp.addEventListener('focus', () => {
-      hexInp.style.borderColor = '#00ff9f';
-      hexInp.style.boxShadow   = '0 0 0 2px rgba(0,255,159,.1)';
+      hexInp.style.borderColor = '#00ff64';
+      hexInp.style.boxShadow   = '0 0 0 2px rgba(0,255,100,.1)';
     });
     hexInp.addEventListener('blur', () => {
-      hexInp.style.borderColor = 'rgba(0,255,159,.18)';
+      hexInp.style.borderColor = 'rgba(0,255,100,.18)';
       hexInp.style.boxShadow   = 'none';
     });
 
