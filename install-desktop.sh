@@ -27,6 +27,11 @@ DESKTOP_DIR="$HOME/.local/share/applications"
 
 mkdir -p "$INSTALL_DIR" "$ICON_DIR" "$DESKTOP_DIR"
 
+# Capture the absolute repo path now, at install time.
+# This is stored in the .desktop Exec= line so the app always reads
+# content.json from the live repo directory on every launch.
+REPO_DATA_DIR="$(realpath "$(dirname "$0")/assets/json")"
+
 # ── Copy AppImage ──────────────────────────────────────────────────
 DEST="$INSTALL_DIR/fwordssh.AppImage"
 cp -f "$APPIMAGE" "$DEST"
@@ -45,7 +50,7 @@ cat > "$DESKTOP_FILE" <<EOF
 [Desktop Entry]
 Name=FWORD SSH
 Comment=Your local SSH manager
-Exec=$DEST
+Exec=env FWORDSSH_DATA_DIR=$REPO_DATA_DIR $DEST
 Icon=fwordssh
 Type=Application
 Categories=Network;RemoteAccess;Utility;
@@ -64,3 +69,5 @@ echo ""
 echo "Done! You can now:"
 echo "  • Search for 'FWORD SSH' in your app launcher"
 echo "  • Right-click it in the launcher → Pin to Dock / Add to Favourites"
+echo ""
+echo "To update your server list: edit assets/json/content.json — the app reloads automatically."

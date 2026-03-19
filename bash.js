@@ -15,12 +15,13 @@ const wss    = new WebSocketServer({ server });
 const PORT   = 5556;
 const HOME   = os.homedir();
 
-// When running inside the packaged Electron app the main process passes
-// FWORDSSH_DATA_DIR pointing to a writable userData folder. In dev/browser
-// mode we fall back to the local assets/json directory.
-const CONTENT_PATH = process.env.FWORDSSH_DATA_DIR
-  ? path.join(process.env.FWORDSSH_DATA_DIR, 'content.json')
-  : path.join(__dirname, 'assets/json/content.json');
+// FWORDSSH_DATA_DIR is the directory containing content.json.
+// In Electron it points to the unpacked assets/json dir; in dev/CLI it falls
+// back to the local assets/json directory next to this file.
+const CONTENT_PATH = path.join(
+  process.env.FWORDSSH_DATA_DIR || path.join(__dirname, 'assets/json'),
+  'content.json'
+);
 
 app.use(cors({ origin: '*' }));
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -282,10 +283,22 @@ app.get('/servers/watch', (req, res) => {
     req.on('close', () => sseClients.delete(res));
 });
 
-fs.watch(CONTENT_PATH, { persistent: false }, () => {
+// Watch the parent directory so atomic saves (write-temp-then-rename, used by
+// VS Code and most editors) are reliably detected even after an inode change.
+fs.watch(path.dirname(CONTENT_PATH), { persistent: false }, (event, filename) => {
+    if (filename !== path.basename(CONTENT_PATH)) return;
     for (const res of sseClients) {
         try { res.write('data: update\n\n'); } catch { sseClients.delete(res); }
     }
+});
+
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.error(`[backend] Port ${PORT} already in use — is another instance running?`);
+    } else {
+        console.error('[backend] Server error:', err.message);
+    }
+    process.exit(1);
 });
 
 server.listen(PORT, () => {

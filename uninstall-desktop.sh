@@ -46,5 +46,14 @@ gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || tr
 
 echo ""
 echo "FWORD SSH has been uninstalled."
-echo "Your server list is kept at: ~/.config/FWORD SSH/content.json"
-echo "Delete that file manually if you want to remove all data."
+
+DATA_DIR="$HOME/.config/FWORD SSH"
+if [[ -d "$DATA_DIR" ]]; then
+  read -r -p "Remove server data ($DATA_DIR)? [y/N] " ans
+  if [[ "$ans" =~ ^[Yy]$ ]]; then
+    rm -rf "$DATA_DIR"
+    echo "✔  Removed $DATA_DIR"
+  else
+    echo "Server data kept at: $DATA_DIR"
+  fi
+fi

@@ -20,6 +20,7 @@
     "icon": "assets/img/icon.png",
     "files": [
       "electron-main.js",
+      "bash.js",
       "index.html",
       "assets/**/*",
       "!assets/fonts/.gitkeep"
