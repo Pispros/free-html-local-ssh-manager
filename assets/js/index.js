@@ -503,8 +503,9 @@ async function getData() {
     const url = IS_ELECTRON ? 'http://localhost:5556/servers' : 'assets/json/content.json';
     const r   = await fetch(url);
     sshList   = await r.json();
+    if (!sshList.length) sshList = [{ server: 'Demo VPS', ip: '192.168.1.1', user: 'root', pwd: '' }];
   } catch {
-    sshList = [];
+    sshList = [{ server: 'Demo VPS', ip: '192.168.1.1', user: 'root', pwd: '' }];
   }
   renderVpsList();
 }
@@ -522,7 +523,7 @@ function renderVpsList() {
   const grid = document.getElementById('vps-grid');
   grid.innerHTML = '';
   if (!sshList.length) {
-    grid.innerHTML = '<div id="vps-empty">No servers configured</div>';
+    grid.innerHTML = '<p class="no-servers">No servers configured.</p>';
     return;
   }
   sshList.forEach((vps, i) => {
