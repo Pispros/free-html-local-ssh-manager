@@ -15,17 +15,17 @@
   }
 
   function draw() {
-    ctx.fillStyle = 'rgba(5,7,9,.065)';
+    ctx.fillStyle = 'rgba(6,11,19,.065)';
     ctx.fillRect(0, 0, W, H);
 
     for (let i = 0; i < cols; i++) {
       const y = drops[i] * 16;
       // leading char — bright
       ctx.font = '13px "IBM Plex Mono", monospace';
-      ctx.fillStyle = `rgba(180,255,180,${0.7 + Math.random()*0.3})`;
+      ctx.fillStyle = `rgba(180,255,210,${0.7 + Math.random()*0.3})`;
       ctx.fillText(CHARS[Math.floor(Math.random() * CHARS.length)], i * 16, y);
       // trailing char — dim green
-      ctx.fillStyle = `rgba(0,${Math.floor(160 + Math.random()*95)},${Math.floor(40 + Math.random()*40)},${0.15 + Math.random()*0.25})`;
+      ctx.fillStyle = `rgba(0,${Math.floor(160 + Math.random()*95)},${Math.floor(80 + Math.random()*60)},${0.15 + Math.random()*0.25})`;
       ctx.fillText(CHARS[Math.floor(Math.random() * CHARS.length)], i * 16, y - 16);
 
       drops[i] += .35 + Math.random() * .5;
@@ -50,18 +50,158 @@ function decrypt(enc, pwd, salt) {
 }
 
 /* ══════════════════════════════════════════════════════════
+   GENERIC DIALOG (prompt / confirm replacement)
+══════════════════════════════════════════════════════════ */
+function showDialog({ title = '', message = '', input = false, placeholder = '', inputType = 'text', danger = false } = {}) {
+  return new Promise(resolve => {
+    const overlay = document.getElementById('dialog-overlay');
+    const modal   = document.getElementById('dialog-modal');
+    const okBtn   = document.getElementById('dlg-ok');
+    const cancelBtn = document.getElementById('dlg-cancel');
+    const closeBtn  = document.getElementById('dlg-close');
+    const msgEl   = document.getElementById('dlg-msg');
+    const inp     = document.getElementById('dlg-input');
+
+    // Content
+    document.getElementById('dlg-title').textContent = title;
+    msgEl.textContent  = message;
+    msgEl.style.display = message ? 'block' : 'none';
+    inp.style.display  = input ? 'block' : 'none';
+    inp.type        = inputType;
+    inp.placeholder = placeholder;
+    inp.value       = '';
+    // Force input theme inline so Electron/Chromium native styles can't override
+    Object.assign(inp.style, {
+      background:          '#0d1520',
+      backgroundColor:     '#0d1520',
+      color:               '#c8e6c9',
+      border:              '1px solid rgba(0,255,159,.22)',
+      borderRadius:        '5px',
+      fontFamily:          "'IBM Plex Mono', monospace",
+      fontSize:            '12px',
+      letterSpacing:       '.05em',
+      padding:             '0 12px',
+      height:              '38px',
+      width:               '100%',
+      outline:             'none',
+      boxSizing:           'border-box',
+      caretColor:          '#00ff9f',
+    });
+    okBtn.className   = 'hdr-btn ' + (danger ? 'danger-btn' : 'accent');
+    okBtn.textContent = danger ? 'Delete' : 'OK';
+
+    // Force overlay styles inline — guarantees correct layout regardless of CSS cache
+    Object.assign(overlay.style, {
+      display:         'flex',
+      position:        'fixed',
+      top:             '0',
+      left:            '0',
+      width:           '100vw',
+      height:          '100vh',
+      background:      'rgba(6,11,19,.9)',
+      backdropFilter:  'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
+      alignItems:      'center',
+      justifyContent:  'center',
+      zIndex:          '99999',
+    });
+    Object.assign(modal.style, {
+      width:        '360px',
+      maxWidth:     'calc(100vw - 32px)',
+      background:   '#101827',
+      border:       '1px solid rgba(0,255,159,.25)',
+      borderRadius: '8px',
+      overflow:     'hidden',
+      flexShrink:   '0',
+    });
+
+    if (input) setTimeout(() => {
+      inp.focus();
+      inp.addEventListener('focus', () => {
+        inp.style.borderColor = '#00ff9f';
+        inp.style.boxShadow   = '0 0 0 3px rgba(0,255,159,.12), 0 0 12px rgba(0,255,159,.08)';
+      }, { once: false });
+      inp.addEventListener('blur', () => {
+        inp.style.borderColor = 'rgba(0,255,159,.22)';
+        inp.style.boxShadow   = 'none';
+      }, { once: false });
+    }, 60);
+
+    function close(val) {
+      overlay.style.display = 'none';
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      closeBtn.removeEventListener('click', onCancel);
+      overlay.removeEventListener('click', onBackdrop);
+      inp.removeEventListener('keydown', onKey);
+      resolve(val);
+    }
+    function onOk()        { close(input ? inp.value : true); }
+    function onCancel()    { close(null); }
+    function onBackdrop(e) { if (e.target === overlay) close(null); }
+    function onKey(e)      { if (e.key === 'Enter') onOk(); else if (e.key === 'Escape') onCancel(); }
+
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    closeBtn.addEventListener('click', onCancel);
+    overlay.addEventListener('click', onBackdrop);
+    inp.addEventListener('keydown', onKey);
+  });
+}
+
+/* ══════════════════════════════════════════════════════════
    PALETTE SYSTEM
 ══════════════════════════════════════════════════════════ */
-const PALETTE_KEY = 'fword_ssh_palette';
+const PALETTE_KEY         = 'fword_ssh_palette';
+const CUSTOM_PALETTES_KEY = 'fword_ssh_custom_palettes';
+
+let customPalettes = {};
+
+function loadCustomPalettes() {
+  try {
+    const saved = localStorage.getItem(CUSTOM_PALETTES_KEY);
+    if (saved) customPalettes = JSON.parse(saved);
+  } catch { customPalettes = {}; }
+}
+
+function saveCustomPalettes() {
+  try { localStorage.setItem(CUSTOM_PALETTES_KEY, JSON.stringify(customPalettes)); } catch {}
+}
+
+async function saveCurrentAsCustom() {
+  const raw = await showDialog({ title: 'Save Palette', input: true, placeholder: 'Palette name…' });
+  if (!raw) return;
+  const name = raw.trim().slice(0, 40);
+  if (!name) return;
+  if (PRESETS[name]) { showToast('Cannot override a built-in preset'); return; }
+  customPalettes[name] = { ...editingPalette };
+  saveCustomPalettes();
+  activePreset = name;
+  buildPaletteModal();
+  showToast(`Palette "${name}" saved`);
+}
+
+async function deleteCustomPalette(name) {
+  const ok = await showDialog({ title: 'Delete Palette', message: `Delete palette "${name}"?`, danger: true });
+  if (!ok) return;
+  delete customPalettes[name];
+  saveCustomPalettes();
+  if (activePreset === name) {
+    activePreset = 'Fword Dark';
+    editingPalette = { ...PRESETS['Fword Dark'] };
+  }
+  buildPaletteModal();
+  showToast(`Palette "${name}" deleted`);
+}
 
 const PRESETS = {
   'Fword Dark': {
-    background:'#050709', foreground:'#d0e8d0', cursor:'#00ff64',
-    black:'#1a2a1a', red:'#ff3355', green:'#00ff64', yellow:'#ffb300',
-    blue:'#4cc9f0', magenta:'#c084fc', cyan:'#00e5ff', white:'#d0e8d0',
-    brightBlack:'#2a3a2a', brightRed:'#ff6680', brightGreen:'#33ff88',
-    brightYellow:'#ffd166', brightBlue:'#74d7f7', brightMagenta:'#d4a0ff',
-    brightCyan:'#80f0ff', brightWhite:'#eaf7ea',
+    background:'#060b13', foreground:'#c8e6c9', cursor:'#00ff9f',
+    black:'#0e1826', red:'#ff3355', green:'#00ff9f', yellow:'#ffc107',
+    blue:'#4cc9f0', magenta:'#c77dff', cyan:'#00e5ff', white:'#c8e6c9',
+    brightBlack:'#1e3248', brightRed:'#ff6680', brightGreen:'#33ffaa',
+    brightYellow:'#ffe566', brightBlue:'#74d7f7', brightMagenta:'#da9fff',
+    brightCyan:'#80f0ff', brightWhite:'#e8f5e9',
   },
   'Dracula': {
     background:'#282a36', foreground:'#f8f8f2', cursor:'#f8f8f2',
@@ -126,27 +266,27 @@ function savePalette(p) {
 
 function buildXtermTheme(p) {
   return {
-    background:          p.background   || '#050709',
-    foreground:          p.foreground   || '#d0e8d0',
-    cursor:              p.cursor       || '#00ff64',
-    cursorAccent:        p.background   || '#050709',
-    selectionBackground: 'rgba(0,255,100,.18)',
-    black:               p.black        || '#1a2a1a',
+    background:          p.background   || '#060b13',
+    foreground:          p.foreground   || '#c8e6c9',
+    cursor:              p.cursor       || '#00ff9f',
+    cursorAccent:        p.background   || '#060b13',
+    selectionBackground: 'rgba(0,255,159,.18)',
+    black:               p.black        || '#0e1826',
     red:                 p.red          || '#ff3355',
-    green:               p.green        || '#00ff64',
-    yellow:              p.yellow       || '#ffb300',
+    green:               p.green        || '#00ff9f',
+    yellow:              p.yellow       || '#ffc107',
     blue:                p.blue         || '#4cc9f0',
-    magenta:             p.magenta      || '#c084fc',
+    magenta:             p.magenta      || '#c77dff',
     cyan:                p.cyan         || '#00e5ff',
-    white:               p.white        || '#d0e8d0',
-    brightBlack:         p.brightBlack  || '#2a3a2a',
+    white:               p.white        || '#c8e6c9',
+    brightBlack:         p.brightBlack  || '#1e3248',
     brightRed:           p.brightRed    || '#ff6680',
-    brightGreen:         p.brightGreen  || '#33ff88',
-    brightYellow:        p.brightYellow || '#ffd166',
+    brightGreen:         p.brightGreen  || '#33ffaa',
+    brightYellow:        p.brightYellow || '#ffe566',
     brightBlue:          p.brightBlue   || '#74d7f7',
-    brightMagenta:       p.brightMagenta|| '#d4a0ff',
+    brightMagenta:       p.brightMagenta|| '#da9fff',
     brightCyan:          p.brightCyan   || '#80f0ff',
-    brightWhite:         p.brightWhite  || '#eaf7ea',
+    brightWhite:         p.brightWhite  || '#e8f5e9',
   };
 }
 
@@ -158,6 +298,8 @@ function buildPaletteModal() {
   // presets
   const prow = document.getElementById('preset-row');
   prow.innerHTML = '';
+
+  // built-in presets
   Object.keys(PRESETS).forEach(name => {
     const b = document.createElement('button');
     b.className  = 'preset-btn' + (name === activePreset ? ' active' : '');
@@ -170,24 +312,152 @@ function buildPaletteModal() {
     prow.appendChild(b);
   });
 
+  // custom palettes (with delete button)
+  Object.keys(customPalettes).forEach(name => {
+    const wrap = document.createElement('div');
+    wrap.className = 'preset-wrap';
+    const b = document.createElement('button');
+    b.className = 'preset-btn' + (name === activePreset ? ' active' : '');
+    b.textContent = name;
+    b.addEventListener('click', () => {
+      activePreset = name;
+      editingPalette = { ...customPalettes[name] };
+      buildPaletteModal();
+    });
+    const del = document.createElement('button');
+    del.className = 'preset-del';
+    del.title = 'Delete';
+    del.innerHTML = '&times;';
+    del.addEventListener('click', e => { e.stopPropagation(); deleteCustomPalette(name); });
+    wrap.appendChild(b);
+    wrap.appendChild(del);
+    prow.appendChild(wrap);
+  });
+
+  // "+ Save as New" button
+  const addBtn = document.createElement('button');
+  addBtn.className = 'preset-btn preset-add';
+  addBtn.textContent = '+ Save as New';
+  addBtn.addEventListener('click', saveCurrentAsCustom);
+  prow.appendChild(addBtn);
+
   // color rows
   const grid = document.getElementById('color-grid');
   grid.innerHTML = '';
   COLOR_LABELS.forEach(([key, label]) => {
-    const val  = editingPalette[key] || '#000000';
-    const row  = document.createElement('div'); row.className = 'color-row';
-    const sw   = document.createElement('div'); sw.className = 'color-swatch';
-    sw.style.background = val;
-    const inp  = document.createElement('input'); inp.type='color'; inp.value = val;
-    inp.addEventListener('input', () => {
-      editingPalette[key] = inp.value;
-      sw.style.background = inp.value;
-      row.querySelector('.color-hex').textContent = inp.value;
+    const val = editingPalette[key] || '#000000';
+
+    const row = document.createElement('div');
+    row.className = 'color-row';
+
+    // Swatch (visual indicator + hidden native picker)
+    const swWrap = document.createElement('div');
+    swWrap.className = 'color-swatch';
+    swWrap.style.background = val;
+
+    const nativePicker = document.createElement('input');
+    nativePicker.type  = 'color';
+    nativePicker.value = val;
+    // Keep it off-screen rather than opacity:0 so Electron can still open it
+    Object.assign(nativePicker.style, {
+      position: 'absolute', opacity: '0',
+      width: '1px', height: '1px',
+      top: '0', left: '0', pointerEvents: 'none',
     });
-    sw.appendChild(inp);
-    const lbl  = document.createElement('span'); lbl.className='color-lbl'; lbl.textContent=label;
-    const hex  = document.createElement('span'); hex.className='color-hex'; hex.textContent=val;
-    row.appendChild(sw); row.appendChild(lbl); row.appendChild(hex);
+    swWrap.appendChild(nativePicker);
+
+    // Label
+    const lbl = document.createElement('span');
+    lbl.className   = 'color-lbl';
+    lbl.textContent = label;
+
+    // Editable hex field — force dark styles inline so Electron can't override
+    const hexInp = document.createElement('input');
+    hexInp.type        = 'text';
+    hexInp.className   = 'color-hex-input';
+    hexInp.value       = val;
+    hexInp.maxLength   = 7;
+    hexInp.spellcheck  = false;
+    hexInp.autocomplete = 'off';
+    Object.assign(hexInp.style, {
+      background:      '#0d1520',
+      backgroundColor: '#0d1520',
+      color:           '#c8e6c9',
+      WebkitTextFillColor: '#c8e6c9',
+      caretColor:      '#00ff9f',
+      border:          '1px solid rgba(0,255,159,.18)',
+      borderRadius:    '4px',
+      fontFamily:      "'IBM Plex Mono', monospace",
+      fontSize:        '11px',
+      letterSpacing:   '.07em',
+      height:          '26px',
+      padding:         '0 8px',
+      outline:         'none',
+      boxSizing:       'border-box',
+      flex:            '1',
+      minWidth:        '0',
+    });
+    hexInp.addEventListener('focus', () => {
+      hexInp.style.borderColor = '#00ff9f';
+      hexInp.style.boxShadow   = '0 0 0 2px rgba(0,255,159,.1)';
+    });
+    hexInp.addEventListener('blur', () => {
+      hexInp.style.borderColor = 'rgba(0,255,159,.18)';
+      hexInp.style.boxShadow   = 'none';
+    });
+
+    // Color-picker trigger button
+    const pickBtn = document.createElement('button');
+    pickBtn.className = 'color-pick-btn';
+    pickBtn.title     = 'Pick color';
+    pickBtn.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M20.71 5.63l-2.34-2.34a1 1 0 0 0-1.41 0l-3.12 3.12-1.41-1.42-1.42 1.42 1.41 1.41-6.6 6.6A2 2 0 0 0 5 16v3h3a2 2 0 0 0 1.42-.59l6.6-6.6 1.41 1.42 1.42-1.42-1.42-1.41 3.12-3.12a1 1 0 0 0 0-1.65z"/></svg>`;
+
+    // Sync helper
+    function applyColor(hex) {
+      const clean = hex.trim().toLowerCase();
+      if (!/^#[0-9a-f]{6}$/.test(clean)) return;
+      editingPalette[key]    = clean;
+      swWrap.style.background = clean;
+      nativePicker.value     = clean;
+      hexInp.value           = clean;
+    }
+
+    // Native picker → everything else
+    nativePicker.addEventListener('input', () => applyColor(nativePicker.value));
+
+    // Hex text field: update live as user types valid hex
+    hexInp.addEventListener('input', () => {
+      let v = hexInp.value.trim();
+      if (!v.startsWith('#')) v = '#' + v;
+      if (/^#[0-9a-fA-F]{6}$/.test(v)) applyColor(v);
+    });
+    hexInp.addEventListener('blur', () => {
+      // Snap back to last valid value on bad input
+      let v = hexInp.value.trim();
+      if (!v.startsWith('#')) v = '#' + v;
+      if (!/^#[0-9a-f]{6}$/.test(v.toLowerCase())) hexInp.value = editingPalette[key];
+    });
+    hexInp.addEventListener('keydown', e => e.stopPropagation());
+
+    // Picker button → programmatically open native picker
+    pickBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      nativePicker.style.pointerEvents = 'auto';
+      nativePicker.click();
+      setTimeout(() => { nativePicker.style.pointerEvents = 'none'; }, 300);
+    });
+
+    // Click on swatch also opens picker
+    swWrap.addEventListener('click', () => {
+      nativePicker.style.pointerEvents = 'auto';
+      nativePicker.click();
+      setTimeout(() => { nativePicker.style.pointerEvents = 'none'; }, 300);
+    });
+
+    row.appendChild(swWrap);
+    row.appendChild(lbl);
+    row.appendChild(hexInp);
+    row.appendChild(pickBtn);
     grid.appendChild(row);
   });
 }
@@ -208,6 +478,7 @@ document.getElementById('palette-reset').addEventListener('click', () => {
   activePreset = 'Fword Dark';
   editingPalette = { ...PRESETS['Fword Dark'] };
   buildPaletteModal();
+  showToast('Reset to Fword Dark');
 });
 
 document.getElementById('palette-save').addEventListener('click', () => {
@@ -313,11 +584,13 @@ function renderVpsList() {
         showToast('SSH command copied!');
       }
       if (btn.dataset.action === 'pwd') {
-        try {
-          const salt = prompt('Enter VPS salt');
-          navigator.clipboard.writeText(decrypt(vps.pwd, 'your_password_here', String(salt)));
-          showToast('Password copied!');
-        } catch { showToast('Incorrect salt!'); }
+        showDialog({ title: 'Decrypt Password', message: `${vps.server || vps.ip}`, input: true, placeholder: 'Enter salt…', inputType: 'password' }).then(salt => {
+          if (salt === null) return;
+          try {
+            navigator.clipboard.writeText(decrypt(vps.pwd, 'your_password_here', String(salt)));
+            showToast('Password copied!');
+          } catch { showToast('Incorrect salt!'); }
+        });
       }
     });
   });
@@ -589,5 +862,6 @@ function showToast(msg) {
 /* ══════════════════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════════════════ */
+loadCustomPalettes();
 loadPalette();
 getData();

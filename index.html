@@ -84,6 +84,26 @@
   Terminals
 </button>
 
+<!-- ── Generic dialog (prompt / confirm replacement) ────── -->
+<div id="dialog-overlay" style="display:none">
+  <div id="dialog-modal">
+    <div class="modal-header">
+      <span class="modal-title" id="dlg-title"></span>
+      <button class="modal-close" id="dlg-close">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p id="dlg-msg"></p>
+      <input id="dlg-input" type="text" class="dlg-field" autocomplete="off" spellcheck="false" />
+    </div>
+    <div class="modal-footer">
+      <button class="hdr-btn" id="dlg-cancel">Cancel</button>
+      <button class="hdr-btn accent" id="dlg-ok">OK</button>
+    </div>
+  </div>
+</div>
+
 <script src="assets/js/index.js"></script>
 </body>
 </html>
