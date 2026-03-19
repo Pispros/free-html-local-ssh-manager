@@ -4,7 +4,6 @@
 > You can inspect every line of code — no backdoors, no telemetry. 🙂
 
 <img src="screen.gif" />
-<img src="screen.png" />
 <img src="screen-2.png" />
 
 ---
