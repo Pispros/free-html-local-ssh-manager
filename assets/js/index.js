@@ -816,6 +816,20 @@ function openTile(vps) {
   term.loadAddon(fit);
   term.open(document.getElementById(`body-${id}`));
 
+  // Ctrl+Shift+C = copy selection, Ctrl+Shift+V = paste
+  term.attachCustomKeyEventHandler(e => {
+    if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+      const sel = term.getSelection();
+      if (sel) navigator.clipboard.writeText(sel).catch(() => {});
+      return false;
+    }
+    if (e.ctrlKey && e.shiftKey && e.key === 'V') {
+      navigator.clipboard.readText().then(text => { if (text) term.paste(text); }).catch(() => {});
+      return false;
+    }
+    return true;
+  });
+
   // pill
   const pill = document.createElement('div');
   pill.className = 'ws-pill active'; pill.id = `pill-${id}`;

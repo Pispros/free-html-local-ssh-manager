@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, session } = require('electron');
 const http                   = require('http');
 const path                   = require('path');
 
@@ -60,6 +60,11 @@ function createWindow() {
 }
 
 app.whenReady().then(async () => {
+  // Allow clipboard read/write from the renderer (needed for terminal copy/paste)
+  session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
+    callback(permission === 'clipboard-read' || permission === 'clipboard-sanitized-write');
+  });
+
   startServer();
   await waitForServer();
   createWindow();
