@@ -626,37 +626,156 @@ FAB.addEventListener('click', openWS);
 OPBTN.addEventListener('click', openWS);
 
 /* ── Tiling layout ──────────────────────────────────── */
-function calcLayout(n) {
-  if (n === 0) return [];
-  if (n === 1) return [{ x:0, y:0, w:1, h:1 }];
+let splitCols = 0;
+let splitRows = 0;
+let colFracs  = [];
+let rowFracs  = [];
+
+function ensureSplitFracs(n) {
   const cols = n <= 2 ? n : n <= 4 ? 2 : n <= 6 ? 3 : Math.ceil(Math.sqrt(n));
   const rows = Math.ceil(n / cols);
-  return Array.from({ length: n }, (_, i) => {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const tir = Math.min(cols, n - row * cols);
-    return { x: col / tir, y: row / rows, w: 1 / tir, h: 1 / rows };
-  });
+  if (cols !== splitCols || rows !== splitRows) {
+    splitCols = cols;
+    splitRows = rows;
+    colFracs  = Array.from({ length: cols }, () => 1 / cols);
+    rowFracs  = Array.from({ length: rows }, () => 1 / rows);
+  }
+}
+
+let fitTimer = null;
+function scheduleAllFits() {
+  clearTimeout(fitTimer);
+  fitTimer = setTimeout(() => tiles.forEach(t => { try { t.fit.fit(); } catch {} }), 60);
 }
 
 function applyLayout() {
   const tw = ROOT.offsetWidth;
   const th = ROOT.offsetHeight;
   if (!tw || !th) return;
-  const cells = calcLayout(tiles.length);
+  const n = tiles.length;
+  if (!n) { renderResizers(); return; }
+  ensureSplitFracs(n);
+
+  const cols = splitCols;
+  const rows = splitRows;
+
+  let cx = 0; const cumCols = [0];
+  colFracs.forEach(f => { cx += f; cumCols.push(cx); });
+  let cy = 0; const cumRows = [0];
+  rowFracs.forEach(f => { cy += f; cumRows.push(cy); });
+
   tiles.forEach((t, i) => {
     if (t.fullscreen) return;
-    const c = cells[i];
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const tir = Math.min(cols, n - row * cols);
+    let x, w;
+    if (tir < cols) {
+      x = col / tir;
+      w = 1 / tir;
+    } else {
+      x = cumCols[col];
+      w = colFracs[col];
+    }
+    const y = cumRows[row];
+    const h = rowFracs[row];
     Object.assign(t.el.style, {
-      left:   Math.round(c.x * tw) + GAP + 'px',
-      top:    Math.round(c.y * th) + GAP + 'px',
-      width:  Math.round(c.w * tw) - GAP * 2 + 'px',
-      height: Math.round(c.h * th) - GAP * 2 + 'px',
+      left:   Math.round(x * tw) + GAP + 'px',
+      top:    Math.round(y * th) + GAP + 'px',
+      width:  Math.round(w * tw) - GAP * 2 + 'px',
+      height: Math.round(h * th) - GAP * 2 + 'px',
     });
-    setTimeout(() => { try { t.fit.fit(); } catch {} }, 20);
   });
+  scheduleAllFits();
+  renderResizers();
 }
 window.addEventListener('resize', applyLayout);
+
+/* ── Resizer handles ──────────────────────────────────── */
+let resizeState = null;
+
+function renderResizers() {
+  ROOT.querySelectorAll('.tile-resizer').forEach(r => r.remove());
+  const n = tiles.length;
+  if (n <= 1 || !splitCols) return;
+
+  const tw = ROOT.offsetWidth;
+  const th = ROOT.offsetHeight;
+  const cols = splitCols;
+  const rows = splitRows;
+
+  let cx = 0; const cumCols = [0];
+  colFracs.forEach(f => { cx += f; cumCols.push(cx); });
+  let cy = 0; const cumRows = [0];
+  rowFracs.forEach(f => { cy += f; cumRows.push(cy); });
+
+  const lastRowCount  = n - (rows - 1) * cols;
+  const fullRowsCount = lastRowCount === cols ? rows : rows - 1;
+  const fullRowsH     = cumRows[fullRowsCount] * th;
+
+  for (let i = 0; i < cols - 1; i++) {
+    const x = Math.round(cumCols[i + 1] * tw);
+    createResizer('v', x - 3, 0, 6, fullRowsH, i, null);
+  }
+  for (let j = 0; j < rows - 1; j++) {
+    const y = Math.round(cumRows[j + 1] * th);
+    createResizer('h', 0, y - 3, tw, 6, null, j);
+  }
+}
+
+function createResizer(dir, left, top, width, height, colIdx, rowIdx) {
+  const r = document.createElement('div');
+  r.className = 'tile-resizer tile-resizer-' + dir;
+  Object.assign(r.style, {
+    left:   left   + 'px',
+    top:    top    + 'px',
+    width:  width  + 'px',
+    height: height + 'px',
+  });
+  r.addEventListener('mousedown', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    startResize(e, dir, colIdx, rowIdx);
+  });
+  ROOT.appendChild(r);
+}
+
+function startResize(e, dir, colIdx, rowIdx) {
+  resizeState = {
+    dir, colIdx, rowIdx,
+    startX: e.clientX,
+    startY: e.clientY,
+    startFracs: dir === 'v' ? [...colFracs] : [...rowFracs],
+    tw: ROOT.offsetWidth,
+    th: ROOT.offsetHeight,
+  };
+  ROOT.classList.add('resizing');
+  document.body.style.cursor     = dir === 'v' ? 'col-resize' : 'row-resize';
+  document.body.style.userSelect = 'none';
+}
+
+function handleResizeMove(e) {
+  const { dir, colIdx, rowIdx, startX, startY, startFracs, tw, th } = resizeState;
+  const MIN = 0.1;
+  if (dir === 'v') {
+    const dx = (e.clientX - startX) / tw;
+    const f  = [...startFracs];
+    const i  = colIdx;
+    const total = f[i] + f[i + 1];
+    f[i]     = Math.min(Math.max(f[i] + dx, MIN), total - MIN);
+    f[i + 1] = total - f[i];
+    colFracs = f;
+  } else {
+    const dy = (e.clientY - startY) / th;
+    const f  = [...startFracs];
+    const j  = rowIdx;
+    const total = f[j] + f[j + 1];
+    f[j]     = Math.min(Math.max(f[j] + dy, MIN), total - MIN);
+    f[j + 1] = total - f[j];
+    rowFracs = f;
+  }
+  applyLayout();
+}
 
 /* ══════════════════════════════════════════════════════════
    OPEN TILE
@@ -736,6 +855,7 @@ function startSwapDrag(e, id) {
 }
 
 document.addEventListener('mousemove', e => {
+  if (resizeState) { handleResizeMove(e); return; }
   if (!swapState) return;
   swapState.moved = true;
   // highlight potential drop target
@@ -748,6 +868,13 @@ document.addEventListener('mousemove', e => {
 });
 
 document.addEventListener('mouseup', e => {
+  if (resizeState) {
+    resizeState = null;
+    ROOT.classList.remove('resizing');
+    document.body.style.cursor     = '';
+    document.body.style.userSelect = '';
+    return;
+  }
   if (!swapState) return;
   const { srcId } = swapState;
   swapState = null;

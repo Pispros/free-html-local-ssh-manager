@@ -624,6 +624,40 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .xterm-viewport                    { overflow-y:hidden !important; }
 .xterm-viewport::-webkit-scrollbar { display:none !important; width:0 !important; }
 
+/* ── Tile resizers ─────────────────────────────────────── */
+.tile-resizer {
+  position: absolute;
+  z-index: 10;
+}
+.tile-resizer-v {
+  cursor: col-resize;
+}
+.tile-resizer-h {
+  cursor: row-resize;
+}
+.tile-resizer::after {
+  content: '';
+  position: absolute;
+  background: transparent;
+  transition: background .15s;
+}
+.tile-resizer-v::after {
+  top: 0; bottom: 0;
+  left: 2px; width: 2px;
+  border-radius: 1px;
+}
+.tile-resizer-h::after {
+  left: 0; right: 0;
+  top: 2px; height: 2px;
+  border-radius: 1px;
+}
+.tile-resizer:hover::after {
+  background: rgba(0,255,100,.45);
+}
+#tile-root.resizing .tile-resizer::after {
+  background: rgba(0,255,100,.55);
+}
+
 /* ═══════════════════════════════════════════════════════
    FAB
 ═══════════════════════════════════════════════════════ */
