@@ -817,9 +817,12 @@ function openTile(vps) {
   term.open(document.getElementById(`body-${id}`));
 
   // Ctrl+Shift+C = copy selection, Ctrl+Shift+V = paste
-  // Guard with e.type === 'keydown' to prevent duplicate actions on keyup/keyrepeat
+  // Handler fires on keydown + keypress + keyup (3 times per keystroke).
+  // We must: 1) only act on keydown, 2) preventDefault on ALL events to
+  // stop the browser's native paste from also hitting xterm's hidden textarea.
   term.attachCustomKeyEventHandler(e => {
     if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+      e.preventDefault();
       if (e.type === 'keydown') {
         const sel = term.getSelection();
         if (sel) navigator.clipboard.writeText(sel).catch(() => {});
@@ -827,6 +830,7 @@ function openTile(vps) {
       return false;
     }
     if (e.ctrlKey && e.shiftKey && e.key === 'V') {
+      e.preventDefault();
       if (e.type === 'keydown') {
         navigator.clipboard.readText().then(text => { if (text) term.paste(text); }).catch(() => {});
       }
