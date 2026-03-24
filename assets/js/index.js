@@ -817,14 +817,19 @@ function openTile(vps) {
   term.open(document.getElementById(`body-${id}`));
 
   // Ctrl+Shift+C = copy selection, Ctrl+Shift+V = paste
+  // Guard with e.type === 'keydown' to prevent duplicate actions on keyup/keyrepeat
   term.attachCustomKeyEventHandler(e => {
     if (e.ctrlKey && e.shiftKey && e.key === 'C') {
-      const sel = term.getSelection();
-      if (sel) navigator.clipboard.writeText(sel).catch(() => {});
+      if (e.type === 'keydown') {
+        const sel = term.getSelection();
+        if (sel) navigator.clipboard.writeText(sel).catch(() => {});
+      }
       return false;
     }
     if (e.ctrlKey && e.shiftKey && e.key === 'V') {
-      navigator.clipboard.readText().then(text => { if (text) term.paste(text); }).catch(() => {});
+      if (e.type === 'keydown') {
+        navigator.clipboard.readText().then(text => { if (text) term.paste(text); }).catch(() => {});
+      }
       return false;
     }
     return true;
