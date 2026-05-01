@@ -78,20 +78,23 @@ body {
     min-height: 60px;
 }
 
-/* Make header draggable only in Electron mode */
-body.electron #header {
+/* Make header draggable only in Electron, and only when the workspace is NOT open.
+   #workspace.active covers the full screen at z-index 9000 — but -webkit-app-region
+   is applied at the OS compositor level and ignores z-index, so we must explicitly
+   turn off the drag region whenever the workspace (terminal view) is visible. */
+body.electron:not(:has(#workspace.active)) #header {
     -webkit-app-region: drag;
     cursor: move;
-    user-select: none; /* prevent accidental text selection while dragging */
+    user-select: none;
 }
 
-/* Interactive header children must opt-out of the drag region */
+/* Interactive header children must always opt-out of the drag region */
 body.electron #logo,
 body.electron #header-sub,
 body.electron #header-btns,
 body.electron #window-controls {
     -webkit-app-region: no-drag;
-    cursor: auto; /* let child elements (buttons) restore their own cursor */
+    cursor: auto;
 }
 #header::after {
     content: "";
