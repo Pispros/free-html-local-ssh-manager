@@ -493,6 +493,10 @@ body.electron #window-controls {
 }
 .card-btn:last-child {
     border-right: none;
+    flex: 0;
+    width: 50px !important;
+    padding-right: 10px;
+    padding-left: 10px;
 }
 .card-btn:hover {
     color: var(--accent);
@@ -502,7 +506,13 @@ body.electron #window-controls {
     background: rgba(0, 255, 100, 0.08);
     color: var(--accent);
 }
-
+.card-btn.danger {
+    color: var(--danger);
+}
+.card-btn.danger:hover {
+    background: rgba(255, 51, 85, 0.08);
+    color: var(--danger);
+}
 /* empty state */
 #vps-empty {
     grid-column: 1/-1;
@@ -785,6 +795,30 @@ body.electron #window-controls {
 }
 
 #dialog-modal {
+    width: 360px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    overflow: hidden;
+    animation: modalIn 0.18s cubic-bezier(0.2, 0, 0.2, 1.2);
+}
+
+#add-vps-group-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9700;
+    background: rgba(5, 7, 9, 0.85);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+#add-vps-group-overlay.open {
+    display: flex;
+}
+
+#add-vps-group-modal {
     width: 360px;
     background: var(--surface);
     border: 1px solid var(--border2);
@@ -1186,6 +1220,36 @@ body.electron #window-controls {
     z-index: 8999;
 }
 #ws-fab:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 26px rgba(0, 255, 100, 0.35);
+}
+
+#add-fab {
+    position: fixed;
+    bottom: 18px;
+    left: 18px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    height: 32px;
+    padding: 0 14px;
+    border-radius: 4px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0, 255, 100, 0.25);
+    transition:
+        transform 0.15s,
+        box-shadow 0.15s;
+    z-index: 8999;
+}
+#add-fab:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 26px rgba(0, 255, 100, 0.35);
 }

@@ -134,6 +134,19 @@
                 <div class="modal-body">
                     <div id="group-server-grid"></div>
                 </div>
+                <div class="modal-footer">
+                    <button class="hdr-btn accent" id="group-add-vps">
+                        <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                        >
+                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                        </svg>
+                        Add VPS to Group
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -214,6 +227,14 @@
             Terminals
         </button>
 
+        <!-- ── Add Server FAB ────────────────────────────────────────── -->
+        <button id="add-fab">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+            </svg>
+            Add Server
+        </button>
+
         <!-- ── Generic dialog (prompt / confirm replacement) ────── -->
         <div id="dialog-overlay" style="display: none">
             <div id="dialog-modal">
@@ -245,6 +266,85 @@
                 <div class="modal-footer">
                     <button class="hdr-btn" id="dlg-cancel">Cancel</button>
                     <button class="hdr-btn accent" id="dlg-ok">OK</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Add VPS to Group Modal ──────────────────────────────── -->
+        <div id="add-vps-group-overlay" style="display: none">
+            <div id="add-vps-group-modal">
+                <div class="modal-header">
+                    <span class="modal-title" id="add-vps-group-title"
+                        >Add VPS to Group</span
+                    >
+                    <button class="modal-close" id="add-vps-group-close">
+                        <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                        >
+                            <path
+                                d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+                            />
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div
+                        id="add-vps-group-form"
+                        style="display: flex; flex-direction: column; gap: 12px"
+                    >
+                        <input
+                            type="text"
+                            id="add-vps-name"
+                            class="dlg-field"
+                            placeholder="Server Name"
+                            autocomplete="off"
+                            spellcheck="false"
+                        />
+                        <input
+                            type="text"
+                            id="add-vps-ip"
+                            class="dlg-field"
+                            placeholder="IP Address"
+                            autocomplete="off"
+                            spellcheck="false"
+                        />
+                        <input
+                            type="text"
+                            id="add-vps-user"
+                            class="dlg-field"
+                            placeholder="Username (default: root)"
+                            value="root"
+                            autocomplete="off"
+                            spellcheck="false"
+                        />
+                        <input
+                            type="password"
+                            id="add-vps-password"
+                            class="dlg-field"
+                            placeholder="Password"
+                            autocomplete="off"
+                            spellcheck="false"
+                        />
+                        <input
+                            type="password"
+                            id="add-vps-salt"
+                            class="dlg-field"
+                            placeholder="Encryption Salt (optional)"
+                            autocomplete="off"
+                            spellcheck="false"
+                        />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="hdr-btn" id="add-vps-group-cancel">
+                        Cancel
+                    </button>
+                    <button class="hdr-btn accent" id="add-vps-group-add">
+                        Add to Group
+                    </button>
                 </div>
             </div>
         </div>

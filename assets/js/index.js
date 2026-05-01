@@ -69,11 +69,38 @@ function showDialog({
   return new Promise((resolve) => {
     const overlay = document.getElementById("dialog-overlay");
     const modal = document.getElementById("dialog-modal");
-    const okBtn = document.getElementById("dlg-ok");
-    const cancelBtn = document.getElementById("dlg-cancel");
-    const closeBtn = document.getElementById("dlg-close");
+    const modalBody = modal?.querySelector(".modal-body");
     const msgEl = document.getElementById("dlg-msg");
     const inp = document.getElementById("dlg-input");
+
+    // Clean up any custom forms/buttons from previous dialogs
+    if (modalBody) {
+      const customForms = modalBody.querySelectorAll(
+        ".add-server-buttons, .create-vps-form, .add-to-group-form",
+      );
+      customForms.forEach((form) => form.remove());
+    }
+
+    // Clone buttons to remove all event listeners
+    const oldOkBtn = document.getElementById("dlg-ok");
+    const oldCancelBtn = document.getElementById("dlg-cancel");
+    const oldCloseBtn = document.getElementById("dlg-close");
+
+    const okBtn = oldOkBtn.cloneNode(true);
+    const cancelBtn = oldCancelBtn.cloneNode(true);
+    const closeBtn = oldCloseBtn.cloneNode(true);
+
+    oldOkBtn.parentNode.replaceChild(okBtn, oldOkBtn);
+    oldCancelBtn.parentNode.replaceChild(cancelBtn, oldCancelBtn);
+    oldCloseBtn.parentNode.replaceChild(closeBtn, oldCloseBtn);
+
+    // Reset button displays and text
+    okBtn.textContent = "Submit";
+    okBtn.style.display = "block";
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.style.display = "block";
+    if (msgEl) msgEl.style.display = "block";
+    if (inp) inp.style.display = "block";
 
     // Content
     document.getElementById("dlg-title").textContent = title;
@@ -101,7 +128,7 @@ function showDialog({
       caretColor: "#00ff64",
     });
     okBtn.className = "hdr-btn " + (danger ? "danger-btn" : "accent");
-    okBtn.textContent = danger ? "Delete" : "OK";
+    okBtn.textContent = danger ? "Delete" : "Submit";
 
     // Force overlay styles inline — guarantees correct layout regardless of CSS cache
     Object.assign(overlay.style, {
@@ -152,11 +179,6 @@ function showDialog({
 
     function close(val) {
       overlay.style.display = "none";
-      okBtn.removeEventListener("click", onOk);
-      cancelBtn.removeEventListener("click", onCancel);
-      closeBtn.removeEventListener("click", onCancel);
-      overlay.removeEventListener("click", onBackdrop);
-      inp.removeEventListener("keydown", onKey);
       resolve(val);
     }
     function onOk() {
@@ -173,10 +195,10 @@ function showDialog({
       else if (e.key === "Escape") onCancel();
     }
 
-    okBtn.addEventListener("click", onOk);
-    cancelBtn.addEventListener("click", onCancel);
-    closeBtn.addEventListener("click", onCancel);
-    overlay.addEventListener("click", onBackdrop);
+    okBtn.addEventListener("click", onOk, { once: true });
+    cancelBtn.addEventListener("click", onCancel, { once: true });
+    closeBtn.addEventListener("click", onCancel, { once: true });
+    overlay.addEventListener("click", onBackdrop, { once: true });
     inp.addEventListener("keydown", onKey);
   });
 }
@@ -753,6 +775,7 @@ function createServerCard(vps, serverIndex, animationIndex = serverIndex) {
       <button class="card-btn primary" data-idx="${serverIndex}" data-action="connect"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Connect</button>
       <button class="card-btn" data-idx="${serverIndex}" data-action="copy"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>SSH Cmd</button>
       <button class="card-btn" data-idx="${serverIndex}" data-action="pwd"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>Password</button>
+      <button class="card-btn danger" data-idx="${serverIndex}" data-action="delete"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
     </div>`;
   return card;
 }
@@ -763,6 +786,7 @@ function createGroupCard(group, groupIndex, animationIndex) {
     : 0;
   const card = document.createElement("div");
   card.className = "vps-card group-card";
+  card.dataset.groupIdx = groupIndex;
   card.style.animationDelay = animationIndex * 55 + "ms";
   card.innerHTML = `
     <div class="card-top">
@@ -778,6 +802,7 @@ function createGroupCard(group, groupIndex, animationIndex) {
     <div class="card-bottom">
       <button class="card-btn primary" data-action="view-group" data-group-idx="${groupIndex}"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5z"/></svg>Open</button>
       <button class="card-btn" data-action="connect-all" data-group-idx="${groupIndex}"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>All</button>
+      <button class="card-btn danger" data-action="delete-group" data-group-idx="${groupIndex}"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
     </div>`;
   return card;
 }
@@ -786,6 +811,10 @@ function handleServerAction(btn) {
   const vps = window.sshListFlat[+btn.dataset.idx];
   if (!vps) return;
   if (btn.dataset.action === "connect") openTile(vps);
+  if (btn.dataset.action === "delete") {
+    showDeleteServerDialog(+btn.dataset.idx);
+    return;
+  }
   if (btn.dataset.action === "copy") {
     navigator.clipboard.writeText(`ssh ${vps.user}@${vps.ip}`);
     showToast("SSH command copied!");
@@ -844,10 +873,30 @@ function wireServerCardEvents(root = document) {
         openTile(vps);
       }
     });
+
+    // Add right-click context menu for delete
+    card.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      showDeleteDialog(card);
+      return false;
+    });
+  });
+
+  // Also add delete functionality to group cards
+  root.querySelectorAll(".group-card").forEach((card) => {
+    card.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      showDeleteGroupDialog(card);
+      return false;
+    });
   });
 }
 
+let currentGroupInModal = null;
+let currentGroupForAddVps = null;
+
 function openGroupModal(group) {
+  currentGroupInModal = group;
   const overlay = document.getElementById("group-overlay");
   const title = document.getElementById("group-title");
   const count = document.getElementById("group-modal-count");
@@ -870,6 +919,7 @@ function closeGroupModal() {
   const overlay = document.getElementById("group-overlay");
   overlay.classList.remove("active");
   overlay.style.display = "none";
+  currentGroupInModal = null;
 }
 
 function renderVpsList() {
@@ -894,12 +944,18 @@ function renderVpsList() {
   window.sshListFlat = allServers;
   let cardIndex = 0;
   groups.forEach((group, groupIndex) => {
-    if (!group.nestedServers.length) return;
     const groupCard = createGroupCard(group, groupIndex, cardIndex);
     groupCard.addEventListener("click", (e) => {
       const actionBtn = e.target.closest(".card-btn");
       if (actionBtn?.dataset.action === "connect-all") {
-        group.nestedServers.forEach((server) => openTile(server));
+        if (group.nestedServers && group.nestedServers.length > 0) {
+          group.nestedServers.forEach((server) => openTile(server));
+        }
+        return;
+      }
+      if (actionBtn?.dataset.action === "delete-group") {
+        e.stopPropagation();
+        showDeleteGroupDialog(groupIndex);
         return;
       }
       openGroupModal(group);
@@ -921,6 +977,18 @@ document
   ?.addEventListener("click", closeGroupModal);
 document.getElementById("group-overlay")?.addEventListener("click", (e) => {
   if (e.target.id === "group-overlay") closeGroupModal();
+});
+document.getElementById("group-add-vps")?.addEventListener("click", (e) => {
+  console.log("group-add-vps button clicked");
+  e.stopPropagation(); // Prevent event from bubbling to overlay
+  if (!currentGroupInModal) {
+    console.error("No currentGroupInModal");
+    return;
+  }
+  console.log("currentGroupInModal:", currentGroupInModal);
+  const group = currentGroupInModal; // Save reference before closing
+  closeGroupModal();
+  showAddVpsToGroupModal(group);
 });
 
 /* ══════════════════════════════════════════════════════════
@@ -1439,11 +1507,830 @@ function showToast(msg) {
 }
 
 /* ══════════════════════════════════════════════════════════
+   ADD SERVER/GROUP FUNCTIONALITY
+══════════════════════════════════════════════════════════ */
+function showAddServerMenu() {
+  const dialogPromise = showDialog({
+    title: "Add Server",
+    message: "Choose an option:",
+    input: false,
+    danger: false,
+  });
+
+  const okBtn = document.getElementById("dlg-ok");
+  const cancelBtn = document.getElementById("dlg-cancel");
+  const msgEl = document.getElementById("dlg-msg");
+  const inputEl = document.getElementById("dlg-input");
+
+  // Hide default elements
+  if (okBtn) okBtn.style.display = "none";
+  if (cancelBtn) cancelBtn.textContent = "Close";
+  if (msgEl) msgEl.style.display = "none";
+  if (inputEl) inputEl.style.display = "none";
+
+  // Create custom button container
+  const modalBody = document.querySelector("#dialog-modal .modal-body");
+  if (!modalBody) return;
+
+  const existingCustom = modalBody.querySelector(".add-server-buttons");
+  if (existingCustom) existingCustom.remove();
+
+  const buttonContainer = document.createElement("div");
+  buttonContainer.className = "add-server-buttons";
+  Object.assign(buttonContainer.style, {
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+    marginTop: "16px",
+  });
+
+  // Create Group button
+  const createGroupBtn = document.createElement("button");
+  createGroupBtn.className = "hdr-btn accent";
+  createGroupBtn.innerHTML = `
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+    </svg>
+    Create Group
+  `;
+  createGroupBtn.style.width = "100%";
+  createGroupBtn.addEventListener(
+    "click",
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // Close dialog
+      const overlay = document.getElementById("dialog-overlay");
+      if (overlay) overlay.style.display = "none";
+      // Show create group dialog
+      showCreateGroupDialog();
+    },
+    { once: true },
+  );
+
+  // Create VPS button
+  const createVpsBtn = document.createElement("button");
+  createVpsBtn.className = "hdr-btn accent";
+  createVpsBtn.innerHTML = `
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10l1.41-1.41L10 11.17l-1.41 1.41L6 10zm4 4h8v-2h-8v2z"/>
+    </svg>
+    Create Standalone VPS
+  `;
+  createVpsBtn.style.width = "100%";
+  createVpsBtn.addEventListener(
+    "click",
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // Close dialog
+      const overlay = document.getElementById("dialog-overlay");
+      if (overlay) overlay.style.display = "none";
+      // Show create VPS dialog
+      showCreateVpsDialog();
+    },
+    { once: true },
+  );
+
+  buttonContainer.appendChild(createGroupBtn);
+  buttonContainer.appendChild(createVpsBtn);
+  modalBody.appendChild(buttonContainer);
+}
+
+function showCreateGroupDialog() {
+  showDialog({
+    title: "Create Group",
+    message: "Enter group name:",
+    input: true,
+    placeholder: "My Server Group",
+    inputType: "text",
+    danger: false,
+  }).then((groupName) => {
+    if (!groupName || !groupName.trim()) return;
+
+    const trimmedName = groupName.trim();
+
+    // Check if group already exists
+    const exists = sshList.some(
+      (item) => item.groupName && item.groupName === trimmedName,
+    );
+    if (exists) {
+      showToast(`Group "${trimmedName}" already exists!`);
+      return;
+    }
+
+    // Create new group
+    const newGroup = {
+      groupName: trimmedName,
+      nestedServers: [],
+    };
+
+    // Add to sshList
+    sshList.push(newGroup);
+
+    // Save to backend
+    saveServers()
+      .then(() => {
+        renderVpsList();
+        showToast(`Group "${trimmedName}" created!`);
+      })
+      .catch((err) => {
+        console.error("Failed to save group:", err);
+        renderVpsList(); // Still update UI
+        showToast(`Failed to save group`);
+      });
+  });
+}
+
+function showCreateVpsDialog() {
+  // Show dialog and wait for setup
+  const dialogPromise = showDialog({
+    title: "Create VPS",
+    message: "Enter VPS details:",
+    input: false,
+    danger: false,
+  });
+
+  const okBtn = document.getElementById("dlg-ok");
+  const cancelBtn = document.getElementById("dlg-cancel");
+  const msgEl = document.getElementById("dlg-msg");
+  const inputEl = document.getElementById("dlg-input");
+
+  if (!okBtn || !cancelBtn) return;
+
+  okBtn.textContent = "SUBMIT";
+  okBtn.style.display = "block";
+  cancelBtn.textContent = "Cancel";
+  if (msgEl) msgEl.style.display = "none";
+  if (inputEl) inputEl.style.display = "none";
+
+  // Create custom form
+  const modalBody = document.querySelector("#dialog-modal .modal-body");
+  if (!modalBody) return;
+
+  const existingForm = modalBody.querySelector(".create-vps-form");
+  if (existingForm) existingForm.remove();
+
+  const form = document.createElement("div");
+  form.className = "create-vps-form";
+  form.style.display = "flex";
+  form.style.flexDirection = "column";
+  form.style.gap = "12px";
+  form.style.marginTop = "12px";
+
+  // Server name input
+  const nameInput = document.createElement("input");
+  nameInput.type = "text";
+  nameInput.placeholder = "Server Name";
+  nameInput.className = "dlg-field";
+  nameInput.style.marginTop = "0";
+
+  // IP input
+  const ipInput = document.createElement("input");
+  ipInput.type = "text";
+  ipInput.placeholder = "IP Address";
+  ipInput.className = "dlg-field";
+
+  // User input
+  const userInput = document.createElement("input");
+  userInput.type = "text";
+  userInput.placeholder = "Username (default: root)";
+  userInput.className = "dlg-field";
+  userInput.value = "root";
+
+  // Password input
+  const pwdInput = document.createElement("input");
+  pwdInput.type = "password";
+  pwdInput.placeholder = "Password";
+  pwdInput.className = "dlg-field";
+
+  // Salt input
+  const saltInput = document.createElement("input");
+  saltInput.type = "password";
+  saltInput.placeholder = "Encryption Salt (optional)";
+  saltInput.className = "dlg-field";
+
+  // Handle form submission with Enter key
+  const handleEnter = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      okBtn.click();
+    }
+  };
+
+  [nameInput, ipInput, userInput, pwdInput, saltInput].forEach((input) => {
+    input.addEventListener("keydown", handleEnter);
+  });
+
+  // Create new click handler for OK button
+  okBtn.addEventListener(
+    "click",
+    function createVpsHandler(e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const serverName = nameInput.value.trim();
+      const ip = ipInput.value.trim();
+      const user = userInput.value.trim() || "root";
+      const password = pwdInput.value.trim();
+      const salt = saltInput.value.trim();
+
+      if (!serverName) {
+        showToast("Server name is required");
+        nameInput.focus();
+        return;
+      }
+
+      if (!ip) {
+        showToast("IP address is required");
+        ipInput.focus();
+        return;
+      }
+
+      // Validate IP format (basic check)
+      const ipPattern =
+        /^(\d{1,3}\.){3}\d{1,3}$|^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?(\.[a-zA-Z]{2,})+$/;
+      if (!ipPattern.test(ip)) {
+        showToast("Invalid IP address or hostname");
+        ipInput.focus();
+        return;
+      }
+
+      // Create new VPS
+      const newVps = {
+        server: serverName,
+        ip: ip,
+        user: user,
+        pwd: password
+          ? encrypt(password, "your_password_here", salt || "default")
+          : "",
+      };
+
+      // Add to sshList
+      sshList.push(newVps);
+
+      // Close the dialog immediately
+      const overlay = document.getElementById("dialog-overlay");
+      if (overlay) overlay.style.display = "none";
+
+      // Save to backend and update UI
+      saveServers()
+        .then(() => {
+          renderVpsList();
+          showToast(`VPS "${serverName}" created!`);
+        })
+        .catch((err) => {
+          console.error("Save error:", err);
+          renderVpsList(); // Still update UI even if save fails
+          showToast(`Failed to save VPS`);
+        });
+    },
+    { once: true },
+  );
+
+  form.appendChild(nameInput);
+  form.appendChild(ipInput);
+  form.appendChild(userInput);
+  form.appendChild(pwdInput);
+  form.appendChild(saltInput);
+  modalBody.appendChild(form);
+
+  // Focus first input
+  nameInput.focus();
+}
+
+function showAddToGroupDialog() {
+  // Get existing groups
+  const groups = sshList.filter((item) => item.groupName);
+
+  if (groups.length === 0) {
+    showToast("No groups available. Create a group first.");
+    return;
+  }
+
+  showDialog({
+    title: "Add VPS to Group",
+    message: "Select a group:",
+    input: false,
+    danger: false,
+  }).then(() => {
+    // We'll handle this with custom form
+  });
+
+  // Clear existing buttons and add custom form
+  const okBtn = document.getElementById("dlg-ok");
+  const cancelBtn = document.getElementById("dlg-cancel");
+  const msgEl = document.getElementById("dlg-msg");
+  const inputEl = document.getElementById("dlg-input");
+
+  // Change OK button to "Add to Group" instead of hiding it
+  okBtn.textContent = "Add to Group";
+  okBtn.style.display = "block";
+  cancelBtn.textContent = "Cancel";
+  msgEl.style.display = "none";
+  inputEl.style.display = "none";
+
+  // Create custom form
+  const modalBody = document.querySelector("#dialog-modal .modal-body");
+  const existingForm = modalBody.querySelector(".add-to-group-form");
+  if (existingForm) existingForm.remove();
+
+  const form = document.createElement("div");
+  form.className = "add-to-group-form";
+  form.style.display = "flex";
+  form.style.flexDirection = "column";
+  form.style.gap = "12px";
+
+  // Group select
+  const groupSelect = document.createElement("select");
+  groupSelect.className = "dlg-field";
+  groupSelect.style.marginTop = "0";
+
+  groups.forEach((group, index) => {
+    const option = document.createElement("option");
+    option.value = index;
+    option.textContent = group.groupName;
+    groupSelect.appendChild(option);
+  });
+
+  // Server name input
+  const nameInput = document.createElement("input");
+  nameInput.type = "text";
+  nameInput.placeholder = "Server Name";
+  nameInput.className = "dlg-field";
+
+  // IP input
+  const ipInput = document.createElement("input");
+  ipInput.type = "text";
+  ipInput.placeholder = "IP Address";
+  ipInput.className = "dlg-field";
+
+  // User input
+  const userInput = document.createElement("input");
+  userInput.type = "text";
+  userInput.placeholder = "Username (default: root)";
+  userInput.className = "dlg-field";
+  userInput.value = "root";
+
+  // Password input
+  const pwdInput = document.createElement("input");
+  pwdInput.type = "password";
+  pwdInput.placeholder = "Password";
+  pwdInput.className = "dlg-field";
+
+  // Salt input
+  const saltInput = document.createElement("input");
+  saltInput.type = "password";
+  saltInput.placeholder = "Encryption Salt (optional)";
+  saltInput.className = "dlg-field";
+
+  // Replace OK button click handler
+  okBtn.onclick = null;
+
+  // Create new click handler for OK button
+  okBtn.addEventListener(
+    "click",
+    function addToGroupHandler() {
+      const groupIndex = parseInt(groupSelect.value);
+      const serverName = nameInput.value.trim();
+      const ip = ipInput.value.trim();
+      const user = userInput.value.trim() || "root";
+      const password = pwdInput.value.trim();
+      const salt = saltInput.value.trim();
+
+      if (!serverName || !ip) {
+        showToast("Server name and IP are required");
+        return;
+      }
+
+      const group = groups[groupIndex];
+      if (!group) {
+        showToast("Invalid group selected");
+        return;
+      }
+
+      // Create new VPS
+      const newVps = {
+        server: serverName,
+        ip: ip,
+        user: user,
+        pwd: password
+          ? encrypt(password, "your_password_here", salt || "default")
+          : "",
+      };
+
+      // Add to group
+      if (!group.nestedServers) {
+        group.nestedServers = [];
+      }
+      group.nestedServers.push(newVps);
+
+      // Save to backend
+      saveServers()
+        .then(() => {
+          // Close the dialog by simulating cancel click
+          const cancelBtn = document.getElementById("dlg-cancel");
+          if (cancelBtn) {
+            cancelBtn.click();
+          }
+          renderVpsList();
+          showToast(`VPS added to "${group.groupName}"!`);
+        })
+        .catch(() => {
+          showToast("Failed to save VPS");
+        });
+    },
+    { once: false },
+  );
+
+  form.appendChild(groupSelect);
+  form.appendChild(nameInput);
+  form.appendChild(ipInput);
+  form.appendChild(userInput);
+  form.appendChild(pwdInput);
+  form.appendChild(saltInput);
+  modalBody.appendChild(form);
+}
+
+function showAddVpsToGroupModal(group) {
+  console.log("showAddVpsToGroupModal called with group:", group);
+  // Store the group reference
+  currentGroupForAddVps = group;
+
+  // Update modal title with group name
+  const titleEl = document.getElementById("add-vps-group-title");
+  if (titleEl) {
+    titleEl.textContent = `Add VPS to "${group.groupName || "Group"}"`;
+  } else {
+    console.error("add-vps-group-title element not found");
+  }
+
+  // Clear form fields
+  const nameEl = document.getElementById("add-vps-name");
+  const ipEl = document.getElementById("add-vps-ip");
+  const userEl = document.getElementById("add-vps-user");
+  const passwordEl = document.getElementById("add-vps-password");
+  const saltEl = document.getElementById("add-vps-salt");
+
+  if (nameEl) nameEl.value = "";
+  if (ipEl) ipEl.value = "";
+  if (userEl) userEl.value = "root";
+  if (passwordEl) passwordEl.value = "";
+  if (saltEl) saltEl.value = "";
+
+  // Show the modal - need to set inline style to override display: none
+  const overlay = document.getElementById("add-vps-group-overlay");
+  if (overlay) {
+    overlay.classList.add("open");
+    overlay.style.display = "flex";
+    console.log("Modal displayed");
+  } else {
+    console.error("add-vps-group-overlay element not found");
+  }
+
+  // Focus on the first input
+  if (nameEl) nameEl.focus();
+}
+
+function closeAddVpsToGroupModal() {
+  const overlay = document.getElementById("add-vps-group-overlay");
+  overlay.classList.remove("open");
+  overlay.style.display = "none";
+  currentGroupForAddVps = null;
+}
+
+function handleAddVpsToGroup() {
+  console.log("handleAddVpsToGroup called");
+  console.log("currentGroupForAddVps:", currentGroupForAddVps);
+
+  if (!currentGroupForAddVps) {
+    console.error("No group selected");
+    showToast("No group selected");
+    return;
+  }
+
+  const nameEl = document.getElementById("add-vps-name");
+  const ipEl = document.getElementById("add-vps-ip");
+  const userEl = document.getElementById("add-vps-user");
+  const passwordEl = document.getElementById("add-vps-password");
+  const saltEl = document.getElementById("add-vps-salt");
+
+  if (!nameEl || !ipEl || !userEl || !passwordEl || !saltEl) {
+    console.error("Form elements not found");
+    showToast("Error: Form elements not found");
+    return;
+  }
+
+  const serverName = nameEl.value.trim();
+  const ip = ipEl.value.trim();
+  const user = userEl.value.trim() || "root";
+  const password = passwordEl.value.trim();
+  const salt = saltEl.value.trim();
+
+  if (!serverName) {
+    showToast("Server name is required");
+    nameEl.focus();
+    return;
+  }
+
+  if (!ip) {
+    showToast("IP address is required");
+    ipEl.focus();
+    return;
+  }
+
+  // Validate IP format (basic check)
+  const ipPattern =
+    /^(\d{1,3}\.){3}\d{1,3}$|^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?(\.[a-zA-Z]{2,})+$/;
+  if (!ipPattern.test(ip)) {
+    showToast("Invalid IP address or hostname");
+    ipEl.focus();
+    return;
+  }
+
+  // Create new VPS
+  const newVps = {
+    server: serverName,
+    ip: ip,
+    user: user,
+    pwd: password
+      ? encrypt(password, "your_password_here", salt || "default")
+      : "",
+  };
+
+  const groupName = currentGroupForAddVps.groupName || "Group";
+
+  // Find the actual group in sshList (don't use the reference, it might be stale)
+  const groupInList = sshList.find(
+    (item) =>
+      item.groupName === groupName &&
+      item.nestedServers &&
+      Array.isArray(item.nestedServers),
+  );
+
+  if (!groupInList) {
+    console.error("Group not found in sshList:", groupName);
+    showToast("Error: Group not found");
+    return;
+  }
+
+  console.log("Found group in sshList:", groupInList);
+  console.log("Group currently has servers:", groupInList.nestedServers.length);
+
+  // Add to the actual group in sshList
+  groupInList.nestedServers.push(newVps);
+
+  console.log("VPS added to group in memory:", newVps);
+  console.log("Group now has servers:", groupInList.nestedServers.length);
+
+  // Close modal immediately
+  closeAddVpsToGroupModal();
+
+  // Save to backend
+  console.log("Calling saveServers...");
+  saveServers()
+    .then(() => {
+      console.log("Save successful, updating UI");
+      renderVpsList();
+      showToast(`VPS "${serverName}" added to "${groupName}"!`);
+      // Find the group again in sshList (in case it was reloaded)
+      const updatedGroup = sshList.find(
+        (item) => item.groupName === groupName && item.nestedServers,
+      );
+      if (updatedGroup) {
+        openGroupModal(updatedGroup);
+      }
+    })
+    .catch((err) => {
+      console.error("Save error:", err);
+      // Even if save fails, the VPS was added to memory
+      renderVpsList();
+      showToast(`Failed to save VPS`);
+      // Find the group again in sshList
+      const updatedGroup = sshList.find(
+        (item) => item.groupName === groupName && item.nestedServers,
+      );
+      if (updatedGroup) {
+        openGroupModal(updatedGroup);
+      }
+    });
+}
+
+function encrypt(text, password, salt) {
+  // Simple encryption for demo - in production use proper crypto
+  return btoa(text + "::" + password + "::" + salt);
+}
+
+function saveServers() {
+  if (!IS_ELECTRON) {
+    // In browser mode, we can't save to file
+    // Data is kept in memory only
+    console.log("Browser mode: data saved in memory only");
+    return Promise.resolve({ message: "Saved in memory (browser mode)" });
+  }
+
+  console.log("Saving servers to backend...", sshList);
+  return fetch("http://localhost:5556/servers", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(sshList),
+  })
+    .then((res) => {
+      if (!res.ok) {
+        console.error("Save failed with status:", res.status);
+        throw new Error(`Save failed: ${res.status}`);
+      }
+      return res.json();
+    })
+    .then((data) => {
+      console.log("Save successful:", data);
+      return data;
+    })
+    .catch((err) => {
+      console.error("Save error:", err);
+      throw err;
+    });
+}
+
+/* ══════════════════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════════════════ */
 loadCustomPalettes();
 loadPalette();
 getData();
+
+// Wire up add-fab button
+const addFab = document.getElementById("add-fab");
+if (addFab) {
+  addFab.addEventListener("click", showAddServerMenu);
+}
+
+// Wire up Add VPS to Group modal
+const addVpsGroupOverlay = document.getElementById("add-vps-group-overlay");
+const addVpsGroupClose = document.getElementById("add-vps-group-close");
+const addVpsGroupCancel = document.getElementById("add-vps-group-cancel");
+const addVpsGroupAdd = document.getElementById("add-vps-group-add");
+
+if (addVpsGroupOverlay) {
+  addVpsGroupOverlay.addEventListener("click", (e) => {
+    if (e.target.id === "add-vps-group-overlay") closeAddVpsToGroupModal();
+  });
+}
+
+if (addVpsGroupClose) {
+  addVpsGroupClose.addEventListener("click", closeAddVpsToGroupModal);
+}
+
+if (addVpsGroupCancel) {
+  addVpsGroupCancel.addEventListener("click", closeAddVpsToGroupModal);
+}
+
+if (addVpsGroupAdd) {
+  addVpsGroupAdd.addEventListener("click", handleAddVpsToGroup);
+}
+
+// Add keyboard support for the modal
+document.addEventListener("keydown", (e) => {
+  const overlay = document.getElementById("add-vps-group-overlay");
+  if (overlay && overlay.style.display === "flex") {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeAddVpsToGroupModal();
+    } else if (e.key === "Enter" && e.target.tagName === "INPUT") {
+      e.preventDefault();
+      handleAddVpsToGroup();
+    }
+  }
+});
+
+function showDeleteServerDialog(serverIndex) {
+  const vps = window.sshListFlat[serverIndex];
+
+  if (!vps) return;
+
+  const serverName = vps.server || vps.ip;
+
+  showDialog({
+    title: "Delete Server",
+    message: `Are you sure you want to delete "${serverName}"?`,
+    input: false,
+    danger: true,
+  }).then((confirmed) => {
+    if (!confirmed) return;
+
+    // Find and remove the server from sshList
+    let removed = false;
+    let wasInGroup = false;
+    let parentGroupName = null;
+
+    // First check if it's in a group
+    for (let i = 0; i < sshList.length; i++) {
+      const item = sshList[i];
+      if (item.groupName && item.nestedServers) {
+        // It's a group, check nested servers
+        const nestedIndex = item.nestedServers.findIndex(
+          (server) => server === vps,
+        );
+        if (nestedIndex !== -1) {
+          console.log(`Removing VPS from group "${item.groupName}"`);
+          item.nestedServers.splice(nestedIndex, 1);
+          removed = true;
+          wasInGroup = true;
+          parentGroupName = item.groupName;
+          break;
+        }
+      } else if (item === vps) {
+        // It's a standalone VPS
+        console.log("Removing standalone VPS");
+        sshList.splice(i, 1);
+        removed = true;
+        break;
+      }
+    }
+
+    if (removed) {
+      saveServers()
+        .then(() => {
+          console.log("Save successful after delete");
+          renderVpsList();
+          showToast(`Server "${serverName}" deleted!`);
+          // If deleted from within a group modal, refresh the modal
+          if (
+            wasInGroup &&
+            currentGroupInModal &&
+            currentGroupInModal.groupName === parentGroupName
+          ) {
+            console.log("Refreshing group modal after delete");
+            // Find the updated group in sshList
+            const updatedGroup = sshList.find(
+              (item) =>
+                item.groupName === parentGroupName && item.nestedServers,
+            );
+            if (updatedGroup) {
+              openGroupModal(updatedGroup);
+            }
+          }
+        })
+        .catch((err) => {
+          console.error("Delete error:", err);
+          renderVpsList();
+          showToast(`Failed to save changes`);
+          // If deleted from within a group modal, refresh the modal
+          if (
+            wasInGroup &&
+            currentGroupInModal &&
+            currentGroupInModal.groupName === parentGroupName
+          ) {
+            console.log("Refreshing group modal after delete (save failed)");
+            // Find the updated group in sshList
+            const updatedGroup = sshList.find(
+              (item) =>
+                item.groupName === parentGroupName && item.nestedServers,
+            );
+            if (updatedGroup) {
+              openGroupModal(updatedGroup);
+            }
+          }
+        });
+    }
+  });
+}
+
+function showDeleteGroupDialog(groupIndex) {
+  const group = sshList.find(
+    (item, idx) => idx === groupIndex && item.groupName,
+  );
+
+  if (!group) return;
+
+  const groupName = group.groupName || "Unnamed Group";
+  const serverCount = group.nestedServers ? group.nestedServers.length : 0;
+
+  showDialog({
+    title: "Delete Group",
+    message: `Are you sure you want to delete group "${groupName}" with ${serverCount} server${serverCount !== 1 ? "s" : ""}?`,
+    input: false,
+    danger: true,
+  }).then((confirmed) => {
+    if (!confirmed) return;
+
+    // Find and remove the group from sshList
+    const index = sshList.findIndex((item) => item === group);
+    if (index !== -1) {
+      sshList.splice(index, 1);
+      saveServers()
+        .then(() => {
+          renderVpsList();
+          showToast(`Group "${groupName}" deleted!`);
+        })
+        .catch((err) => {
+          console.error("Delete error:", err);
+          renderVpsList();
+          showToast(`Failed to save changes`);
+        });
+    }
+  });
+}
 
 /* ══════════════════════════════════════════════════════════
    WINDOW CONTROLS (Electron only)
