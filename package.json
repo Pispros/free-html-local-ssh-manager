@@ -24,6 +24,7 @@
     "icon": "assets/img/icon.png",
     "files": [
       "electron-main.js",
+      "preload.js",
       "bash.js",
       "index.html",
       "assets/**/*",
@@ -33,7 +34,9 @@
       "assets/json/**"
     ],
     "linux": {
-      "target": ["AppImage"],
+      "target": [
+        "AppImage"
+      ],
       "category": "Utility",
       "icon": "assets/img/icon.png"
     },

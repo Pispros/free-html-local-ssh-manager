@@ -1,109 +1,227 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="assets/css/google-fonts.css">
-<link rel="stylesheet" href="assets/css/xterm.css">
-<link rel="stylesheet" href="assets/css/index.css">
-<script src="assets/js/xterm.js"></script>
-<script src="assets/js/xterm-addon-fit.js"></script>
-<script src="assets/js/browser-crypto.min.js"></script>
-<title>FWORD // SSH</title>
-</head>
-<body>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="assets/css/google-fonts.css" />
+        <link rel="stylesheet" href="assets/css/xterm.css" />
+        <link rel="stylesheet" href="assets/css/index.css" />
+        <script src="assets/js/xterm.js"></script>
+        <script src="assets/js/xterm-addon-fit.js"></script>
+        <script src="assets/js/browser-crypto.min.js"></script>
+        <title>FWORD // SSH</title>
+    </head>
+    <body>
+        <!-- Hacker rain canvas -->
+        <canvas id="rain-canvas"></canvas>
 
-<!-- Hacker rain canvas -->
-<canvas id="rain-canvas"></canvas>
+        <!-- ── Main app ───────────────────────────────────────── -->
+        <div id="app">
+            <div id="header">
+                <div id="logo">FWORD<span>//</span>SSH</div>
+                <div id="header-sub">secure shell management console</div>
+                <div id="header-btns">
+                    <button class="hdr-btn" id="btn-palette">
+                        <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                        >
+                            <path
+                                d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"
+                            />
+                        </svg>
+                        Terminal Colors
+                    </button>
+                    <button
+                        class="hdr-btn accent"
+                        id="btn-open-ws"
+                        style="display: none"
+                    >
+                        <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                        >
+                            <path
+                                d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10l1.41-1.41L10 11.17l-1.41 1.41L6 10zm4 4h8v-2h-8v2z"
+                            />
+                        </svg>
+                        Workspace
+                    </button>
+                </div>
+                <div id="window-controls">
+                    <button
+                        class="window-btn"
+                        id="window-minimize"
+                        title="Minimize"
+                    >
+                        <svg
+                            width="10"
+                            height="1"
+                            viewBox="0 0 10 1"
+                            fill="currentColor"
+                        >
+                            <rect width="10" height="1" />
+                        </svg>
+                    </button>
+                    <button
+                        class="window-btn"
+                        id="window-maximize"
+                        title="Maximize"
+                    >
+                        <svg
+                            width="9"
+                            height="9"
+                            viewBox="0 0 9 9"
+                            fill="currentColor"
+                        >
+                            <rect width="9" height="9" />
+                        </svg>
+                    </button>
+                    <button
+                        class="window-btn window-btn-close"
+                        id="window-close"
+                        title="Close"
+                    >
+                        <svg
+                            width="9"
+                            height="9"
+                            viewBox="0 0 9 9"
+                            fill="currentColor"
+                        >
+                            <path
+                                d="M0.5 0.5L8.5 8.5M8.5 0.5L0.5 8.5"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                                stroke-linecap="round"
+                            />
+                        </svg>
+                    </button>
+                </div>
+            </div>
 
-<!-- ── Main app ───────────────────────────────────────── -->
-<div id="app">
-  <div id="header">
-    <div id="logo">FWORD<span>//</span>SSH</div>
-    <div id="header-sub">secure shell management console</div>
-    <div id="header-btns">
-      <button class="hdr-btn" id="btn-palette">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-        Terminal Colors
-      </button>
-      <button class="hdr-btn accent" id="btn-open-ws" style="display:none">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10l1.41-1.41L10 11.17l-1.41 1.41L6 10zm4 4h8v-2h-8v2z"/></svg>
-        Workspace
-      </button>
-    </div>
-  </div>
+            <div id="vps-scroll">
+                <div id="vps-grid">
+                    <div id="vps-empty">Loading servers…</div>
+                </div>
+            </div>
+        </div>
 
-  <div id="vps-scroll">
-    <div id="vps-grid">
-      <div id="vps-empty">Loading servers…</div>
-    </div>
-  </div>
-</div>
+        <!-- ── Palette modal ──────────────────────────────────── -->
+        <div id="palette-overlay">
+            <div id="palette-modal">
+                <div class="modal-header">
+                    <span class="modal-title">Terminal Color Palette</span>
+                    <button class="modal-close" id="palette-close">
+                        <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                        >
+                            <path
+                                d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+                            />
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="preset-row" id="preset-row"></div>
+                    <div class="color-grid" id="color-grid"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="hdr-btn" id="palette-reset">Reset</button>
+                    <button class="hdr-btn accent" id="palette-save">
+                        Save &amp; Apply
+                    </button>
+                </div>
+            </div>
+        </div>
 
-<!-- ── Palette modal ──────────────────────────────────── -->
-<div id="palette-overlay">
-  <div id="palette-modal">
-    <div class="modal-header">
-      <span class="modal-title">Terminal Color Palette</span>
-      <button class="modal-close" id="palette-close">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-      </button>
-    </div>
-    <div class="modal-body">
-      <div class="preset-row" id="preset-row"></div>
-      <div class="color-grid" id="color-grid"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="hdr-btn" id="palette-reset">Reset</button>
-      <button class="hdr-btn accent" id="palette-save">Save &amp; Apply</button>
-    </div>
-  </div>
-</div>
+        <!-- ── Workspace ──────────────────────────────────────── -->
+        <div id="workspace">
+            <div id="ws-bar">
+                <span id="ws-logo">FWORD</span>
+                <div id="ws-pills"></div>
+                <div id="ws-bar-btns">
+                    <button class="ws-bar-btn" id="btn-palette-ws">
+                        <svg
+                            width="10"
+                            height="10"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                        >
+                            <path
+                                d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"
+                            />
+                        </svg>
+                        Colors
+                    </button>
+                    <button class="ws-bar-btn danger" id="btn-exit">
+                        <svg
+                            width="10"
+                            height="10"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                        >
+                            <path
+                                d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+                            />
+                        </svg>
+                        exit
+                    </button>
+                </div>
+            </div>
+            <div id="tile-root"></div>
+        </div>
 
-<!-- ── Workspace ──────────────────────────────────────── -->
-<div id="workspace">
-  <div id="ws-bar">
-    <span id="ws-logo">FWORD</span>
-    <div id="ws-pills"></div>
-    <div id="ws-bar-btns">
-      <button class="ws-bar-btn" id="btn-palette-ws">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-        Colors
-      </button>
-      <button class="ws-bar-btn danger" id="btn-exit">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-        exit
-      </button>
-    </div>
-  </div>
-  <div id="tile-root"></div>
-</div>
+        <button id="ws-fab">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                    d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10l1.41-1.41L10 11.17l-1.41 1.41L6 10zm4 4h8v-2h-8v2z"
+                />
+            </svg>
+            Terminals
+        </button>
 
-<button id="ws-fab">
-  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10l1.41-1.41L10 11.17l-1.41 1.41L6 10zm4 4h8v-2h-8v2z"/></svg>
-  Terminals
-</button>
+        <!-- ── Generic dialog (prompt / confirm replacement) ────── -->
+        <div id="dialog-overlay" style="display: none">
+            <div id="dialog-modal">
+                <div class="modal-header">
+                    <span class="modal-title" id="dlg-title"></span>
+                    <button class="modal-close" id="dlg-close">
+                        <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                        >
+                            <path
+                                d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+                            />
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p id="dlg-msg"></p>
+                    <input
+                        id="dlg-input"
+                        type="text"
+                        class="dlg-field"
+                        autocomplete="off"
+                        spellcheck="false"
+                    />
+                </div>
+                <div class="modal-footer">
+                    <button class="hdr-btn" id="dlg-cancel">Cancel</button>
+                    <button class="hdr-btn accent" id="dlg-ok">OK</button>
+                </div>
+            </div>
+        </div>
 
-<!-- ── Generic dialog (prompt / confirm replacement) ────── -->
-<div id="dialog-overlay" style="display:none">
-  <div id="dialog-modal">
-    <div class="modal-header">
-      <span class="modal-title" id="dlg-title"></span>
-      <button class="modal-close" id="dlg-close">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-      </button>
-    </div>
-    <div class="modal-body">
-      <p id="dlg-msg"></p>
-      <input id="dlg-input" type="text" class="dlg-field" autocomplete="off" spellcheck="false" />
-    </div>
-    <div class="modal-footer">
-      <button class="hdr-btn" id="dlg-cancel">Cancel</button>
-      <button class="hdr-btn accent" id="dlg-ok">OK</button>
-    </div>
-  </div>
-</div>
-
-<script src="assets/js/index.js"></script>
-</body>
+        <script src="assets/js/index.js"></script>
+    </body>
 </html>
