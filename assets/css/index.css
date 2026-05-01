@@ -335,7 +335,7 @@ body.electron #window-controls {
 /* ── VPS card ──────────────────────────────────────────── */
 .vps-card {
     position: relative;
-    background: var(--surface);
+    background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: 6px;
     overflow: hidden;
@@ -343,6 +343,7 @@ body.electron #window-controls {
         border-color 0.2s,
         box-shadow 0.2s;
     animation: cardIn 0.35s cubic-bezier(0.2, 0, 0.2, 1) backwards;
+    cursor: pointer;
 }
 .vps-card:hover {
     border-color: var(--border2);

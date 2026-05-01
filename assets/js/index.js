@@ -734,6 +734,7 @@ const EYE_CLOSED_ICON = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M
 function createServerCard(vps, serverIndex, animationIndex = serverIndex) {
   const card = document.createElement("div");
   card.className = "vps-card";
+  card.dataset.serverIndex = serverIndex;
   card.style.animationDelay = animationIndex * 55 + "ms";
   card.innerHTML = `
     <div class="card-top">
@@ -829,6 +830,19 @@ function wireServerCardEvents(root = document) {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       handleServerAction(btn);
+    });
+  });
+  root.querySelectorAll(".vps-card:not(.group-card)").forEach((card) => {
+    card.addEventListener("click", (e) => {
+      // Don't trigger if click was on a button or eye button
+      if (e.target.closest(".card-btn, .eye-btn")) {
+        return;
+      }
+      const serverIndex = card.dataset.serverIndex;
+      const vps = window.sshListFlat[serverIndex];
+      if (vps) {
+        openTile(vps);
+      }
     });
   });
 }
