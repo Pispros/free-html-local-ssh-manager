@@ -1,42 +1,44 @@
 const prompt = require("prompt-sync")({ sigint: true });
-const crypto = require('crypto');
-const fs     = require('fs');
-const path   = require('path');
+const crypto = require("crypto");
+const fs = require("fs");
+const path = require("path");
 const customPasswordYouCanEdit = "your_password_here"; // you can edit or not
 
 // Supports running both from source and from the packaged Electron app
 const CONTENT_PATH = process.env.FWORDSSH_DATA_DIR
-  ? path.join(process.env.FWORDSSH_DATA_DIR, 'content.json')
-  : 'assets/json/content.json';
+  ? path.join(process.env.FWORDSSH_DATA_DIR, "content.json")
+  : "assets/json/content.json";
 
-const newServerName = prompt("What's your server name ? ");
+const newServerName = prompt(
+  "What's your server name ? You will be able to add it to a group in content.json after registration",
+);
 const newIp = prompt("Enter VPS Ip ? ");
 const newUser = prompt("Enter VPS User ? ");
 const newPassword = prompt("Enter VPS Password ? ");
-const newSalt = prompt("Enter your magic salt. Attention you need this to recover this VPS password ? ")
+const newSalt = prompt(
+  "Enter your magic salt. Attention you need this to recover this VPS password ? ",
+);
 
-fs.readFile(CONTENT_PATH, 'utf8', (err, data) => {
-    if (err) {
-      console.error('Error reading the file:', err);
-      return;
-    }
-    const parsedData = JSON.parse(data);
-    const newData = [...parsedData, {
-        server: newServerName,
-        ip: newIp,
-        user: newUser,
-        pwd: encrypt(String(newPassword), customPasswordYouCanEdit, String(newSalt))
-    }]
+fs.readFile(CONTENT_PATH, "utf8", (err, data) => {
+  if (err) return;
+  const parsedData = JSON.parse(data);
+  const newData = [
+    ...parsedData,
+    {
+      server: newServerName,
+      ip: newIp,
+      user: newUser,
+      pwd: encrypt(
+        String(newPassword),
+        customPasswordYouCanEdit,
+        String(newSalt),
+      ),
+    },
+  ];
 
-    fs.writeFile(CONTENT_PATH, JSON.stringify(newData), 'utf8', (err) => {
-        if (err) {
-          console.error('Error writing to the file:', err);
-          return;
-        }
-      
-        console.log('server list has been updated successfully!');
-        console.log('Reload your browser page!');
-    });
+  fs.writeFile(CONTENT_PATH, JSON.stringify(newData), "utf8", (err) => {
+    if (err) return;
+  });
 });
 
 // Simple Encryption section
@@ -48,19 +50,21 @@ function generateRandomIV() {
 // Function to encrypt a string
 function encrypt(text, password, salt) {
   const iv = generateRandomIV();
-  const key = crypto.pbkdf2Sync(password, salt, 10000, 32, 'sha256');
-  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
-  let encrypted = cipher.update(text, 'utf-8', 'hex');
-  encrypted += cipher.final('hex');
-  return `${iv.toString('hex')}:${encrypted}`;
+  const key = crypto.pbkdf2Sync(password, salt, 10000, 32, "sha256");
+  const cipher = crypto.createCipheriv("aes-256-cbc", key, iv);
+  let encrypted = cipher.update(text, "utf-8", "hex");
+  encrypted += cipher.final("hex");
+  return `${iv.toString("hex")}:${encrypted}`;
 }
 
 // Function to decrypt an encrypted string
 function decrypt(encryptedText, password, salt) {
-  const [iv, encrypted] = encryptedText.split(':').map((part) => Buffer.from(part, 'hex'));
-  const key = crypto.pbkdf2Sync(password, salt, 10000, 32, 'sha256');
-  const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
-  let decrypted = decipher.update(encrypted, 'hex', 'utf-8');
-  decrypted += decipher.final('utf-8');
+  const [iv, encrypted] = encryptedText
+    .split(":")
+    .map((part) => Buffer.from(part, "hex"));
+  const key = crypto.pbkdf2Sync(password, salt, 10000, 32, "sha256");
+  const decipher = crypto.createDecipheriv("aes-256-cbc", key, iv);
+  let decrypted = decipher.update(encrypted, "hex", "utf-8");
+  decrypted += decipher.final("utf-8");
   return decrypted;
 }

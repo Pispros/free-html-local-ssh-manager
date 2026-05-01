@@ -235,6 +235,103 @@ body.electron #window-controls {
     gap: 14px;
 }
 
+/* ── Group cards and modal ───────────────────────────────── */
+.group-card {
+    cursor: pointer;
+}
+
+.group-card::before {
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--warn) 50%,
+        transparent 100%
+    );
+}
+
+.group-orb {
+    background: rgba(255, 179, 0, 0.07);
+    border-color: rgba(255, 179, 0, 0.28);
+}
+
+.group-orb::after {
+    background: var(--warn);
+    box-shadow: 0 0 6px var(--warn);
+}
+
+.group-badge {
+    position: absolute;
+    right: -6px;
+    bottom: -6px;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--warn);
+    color: #050709;
+    border: 1px solid rgba(255, 179, 0, 0.4);
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+#group-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 8000;
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 72px 32px 32px;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(8px);
+}
+
+#group-overlay.active {
+    display: flex;
+}
+
+#group-modal {
+    width: min(1040px, 94vw);
+    max-height: min(760px, 86vh);
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    box-shadow:
+        0 0 0 1px rgba(0, 255, 100, 0.08),
+        0 24px 90px rgba(0, 0, 0, 0.72);
+    overflow: hidden;
+}
+
+.group-modal-title-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    min-width: 0;
+}
+
+#group-modal-count {
+    color: var(--text-mid);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+#group-modal .modal-body {
+    overflow-y: auto;
+}
+
+#group-server-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+}
+
 /* ── VPS card ──────────────────────────────────────────── */
 .vps-card {
     position: relative;

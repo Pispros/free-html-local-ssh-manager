@@ -29,9 +29,6 @@ function waitForServer(maxAttempts = 30, intervalMs = 400) {
     let attempts = maxAttempts;
     (function poll() {
       if (attempts-- <= 0) {
-        console.warn(
-          "[backend] server did not start in time – opening window anyway",
-        );
         return resolve();
       }
       const req = http.get(`http://127.0.0.1:${PORT}/`, (res) => {

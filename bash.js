@@ -1,63 +1,65 @@
-const express    = require('express');
-const http       = require('http');
-const cors       = require('cors');
-const bodyParser = require('body-parser');
-const { WebSocketServer } = require('ws');
-const pty        = require('node-pty');
-const { exec }   = require('child_process');
-const fs         = require('fs');
-const path       = require('path');
-const os         = require('os');
+const express = require("express");
+const http = require("http");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+const { WebSocketServer } = require("ws");
+const pty = require("node-pty");
+const { exec } = require("child_process");
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
 
-const app    = express();
+const app = express();
 const server = http.createServer(app);
-const wss    = new WebSocketServer({ server });
-const PORT   = 5556;
-const HOME   = os.homedir();
+const wss = new WebSocketServer({ server });
+const PORT = 5556;
+const HOME = os.homedir();
 
 // FWORDSSH_DATA_DIR is the directory containing content.json.
 // In Electron it points to the unpacked assets/json dir; in dev/CLI it falls
 // back to the local assets/json directory next to this file.
 const CONTENT_PATH = path.join(
-  process.env.FWORDSSH_DATA_DIR || path.join(__dirname, 'assets/json'),
-  'content.json'
+  process.env.FWORDSSH_DATA_DIR || path.join(__dirname, "assets/json"),
+  "content.json",
 );
 
-app.use(cors({ origin: '*' }));
+app.use(cors({ origin: "*" }));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 // ── Health ────────────────────────────────────────────────────────
-app.get('/', (_req, res) => res.json({ message: 'Service running' }));
+app.get("/", (_req, res) => res.json({ message: "Service running" }));
 
 // ── Server list (read) ───────────────────────────────────────────
-app.get('/servers', (_req, res) => {
-    try {
-        const data = fs.readFileSync(CONTENT_PATH, 'utf8');
-        res.json(JSON.parse(data));
-    } catch {
-        res.json([]);
-    }
+app.get("/servers", (_req, res) => {
+  try {
+    const data = fs.readFileSync(CONTENT_PATH, "utf8");
+    res.json(JSON.parse(data));
+  } catch {
+    res.json([]);
+  }
 });
 
 // ── Server list (write) ──────────────────────────────────────────
-app.put('/servers', (req, res) => {
-    try {
-        fs.writeFileSync(CONTENT_PATH, JSON.stringify(req.body), 'utf8');
-        res.json({ message: 'Saved' });
-    } catch (e) {
-        res.status(500).json({ message: e.message });
-    }
+app.put("/servers", (req, res) => {
+  try {
+    fs.writeFileSync(CONTENT_PATH, JSON.stringify(req.body), "utf8");
+    res.json({ message: "Saved" });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
 });
 
 // ── Legacy native terminal ────────────────────────────────────────
-app.post('/start-terminal', (req, res) => {
-    const cmd = req.body.os.includes('Mac')
-        ? `open -a Terminal.app "${req.body.command}"`
-        : `gnome-terminal -- ${req.body.command}`;
-    exec(cmd, err => err
-        ? res.status(500).json({ message: 'Something went wrong!' })
-        : res.json({ message: 'Terminal started!' }));
+app.post("/start-terminal", (req, res) => {
+  const cmd = req.body.os.includes("Mac")
+    ? `open -a Terminal.app "${req.body.command}"`
+    : `gnome-terminal -- ${req.body.command}`;
+  exec(cmd, (err) =>
+    err
+      ? res.status(500).json({ message: "Something went wrong!" })
+      : res.json({ message: "Terminal started!" }),
+  );
 });
 
 // ── Terminal color theme ──────────────────────────────────────────
@@ -68,241 +70,288 @@ app.post('/start-terminal', (req, res) => {
 //   4. dconf (GNOME Terminal) via shell
 //   5. Returns null → client falls back to built-in dark theme
 
-app.get('/terminal-theme', async (_req, res) => {
-    const theme = await readSystemTheme();
-    res.json(theme);
+app.get("/terminal-theme", async (_req, res) => {
+  const theme = await readSystemTheme();
+  res.json(theme);
 });
 
 async function readSystemTheme() {
-    // ── Alacritty TOML ────────────────────────────────────────────
-    for (const f of [
-        path.join(HOME, '.config/alacritty/alacritty.toml'),
-        path.join(HOME, '.alacritty.toml'),
-        path.join(HOME, '.config/alacritty/alacritty.yml'),
-        path.join(HOME, '.alacritty.yml'),
-    ]) {
-        const t = tryParseAlacritty(f);
-        if (t) { console.log('[theme] loaded from', f); return t; }
-    }
+  // ── Alacritty TOML ────────────────────────────────────────────
+  for (const f of [
+    path.join(HOME, ".config/alacritty/alacritty.toml"),
+    path.join(HOME, ".alacritty.toml"),
+    path.join(HOME, ".config/alacritty/alacritty.yml"),
+    path.join(HOME, ".alacritty.yml"),
+  ]) {
+    const t = tryParseAlacritty(f);
+    if (t) return t;
+  }
 
-    // ── Kitty ─────────────────────────────────────────────────────
-    const kittyPath = path.join(HOME, '.config/kitty/kitty.conf');
-    const kt = tryParseKitty(kittyPath);
-    if (kt) { console.log('[theme] loaded from', kittyPath); return kt; }
+  // ── Kitty ─────────────────────────────────────────────────────
+  const kittyPath = path.join(HOME, ".config/kitty/kitty.conf");
+  const kt = tryParseKitty(kittyPath);
+  if (kt) return kt;
 
-    // ── Xresources / Xdefaults ────────────────────────────────────
-    for (const f of [
-        path.join(HOME, '.Xresources'),
-        path.join(HOME, '.Xdefaults'),
-    ]) {
-        const xt = tryParseXresources(f);
-        if (xt) { console.log('[theme] loaded from', f); return xt; }
-    }
+  // ── Xresources / Xdefaults ────────────────────────────────────
+  for (const f of [
+    path.join(HOME, ".Xresources"),
+    path.join(HOME, ".Xdefaults"),
+  ]) {
+    const xt = tryParseXresources(f);
+    if (xt) return xt;
+  }
 
-    // ── GNOME Terminal via dconf ──────────────────────────────────
-    try {
-        const gt = await readGnomeTheme();
-        if (gt) { console.log('[theme] loaded from dconf'); return gt; }
-    } catch { /* dconf not available */ }
+  // ── GNOME Terminal via dconf ──────────────────────────────────
+  try {
+    const gt = await readGnomeTheme();
+    if (gt) return gt;
+  } catch {
+    /* dconf not available */
+  }
 
-    console.log('[theme] no system theme found, using built-in');
-    return null;
+  return null;
 }
 
 function readFile(f) {
-    try { return fs.readFileSync(f, 'utf8'); } catch { return null; }
+  try {
+    return fs.readFileSync(f, "utf8");
+  } catch {
+    return null;
+  }
 }
 
 /* Alacritty: supports both TOML and YAML, extracts [colors] section */
 function tryParseAlacritty(f) {
-    const raw = readFile(f);
-    if (!raw) return null;
-    const pick = (key) => {
-        const m = raw.match(new RegExp(`${key}\\s*[=:]\\s*['"]?([#0-9a-fA-F]{4,9})['"]?`));
-        return m ? normalizeHex(m[1]) : null;
-    };
-    const bg = pick('background'); const fg = pick('foreground');
-    if (!bg && !fg) return null;
-    return {
-        background:   bg || '#0d1117',
-        foreground:   fg || '#c9d1d9',
-        cursor:       pick('cursor')   || pick('text') || '#00ff9d',
-        black:        pick('black')    || '#1c2640',
-        red:          pick('red')      || '#ff4757',
-        green:        pick('green')    || '#00ff9d',
-        yellow:       pick('yellow')   || '#ffd166',
-        blue:         pick('blue')     || '#4cc9f0',
-        magenta:      pick('magenta')  || '#c084fc',
-        cyan:         pick('cyan')     || '#00ffff',
-        white:        pick('white')    || '#c9d1d9',
-    };
+  const raw = readFile(f);
+  if (!raw) return null;
+  const pick = (key) => {
+    const m = raw.match(
+      new RegExp(`${key}\\s*[=:]\\s*['"]?([#0-9a-fA-F]{4,9})['"]?`),
+    );
+    return m ? normalizeHex(m[1]) : null;
+  };
+  const bg = pick("background");
+  const fg = pick("foreground");
+  if (!bg && !fg) return null;
+  return {
+    background: bg || "#0d1117",
+    foreground: fg || "#c9d1d9",
+    cursor: pick("cursor") || pick("text") || "#00ff9d",
+    black: pick("black") || "#1c2640",
+    red: pick("red") || "#ff4757",
+    green: pick("green") || "#00ff9d",
+    yellow: pick("yellow") || "#ffd166",
+    blue: pick("blue") || "#4cc9f0",
+    magenta: pick("magenta") || "#c084fc",
+    cyan: pick("cyan") || "#00ffff",
+    white: pick("white") || "#c9d1d9",
+  };
 }
 
 /* Kitty: key value pairs */
 function tryParseKitty(f) {
-    const raw = readFile(f);
-    if (!raw) return null;
-    const pick = (key) => {
-        const m = raw.match(new RegExp(`^\\s*${key}\\s+([#0-9a-fA-F]{4,9})`, 'm'));
-        return m ? normalizeHex(m[1]) : null;
-    };
-    const bg = pick('background'); const fg = pick('foreground');
-    if (!bg && !fg) return null;
-    return {
-        background:   bg || '#0d1117',
-        foreground:   fg || '#c9d1d9',
-        cursor:       pick('cursor')          || '#00ff9d',
-        black:        pick('color0')          || '#1c2640',
-        red:          pick('color1')          || '#ff4757',
-        green:        pick('color2')          || '#00ff9d',
-        yellow:       pick('color3')          || '#ffd166',
-        blue:         pick('color4')          || '#4cc9f0',
-        magenta:      pick('color5')          || '#c084fc',
-        cyan:         pick('color6')          || '#00ffff',
-        white:        pick('color7')          || '#c9d1d9',
-        brightBlack:  pick('color8')          || '#2a3a56',
-        brightRed:    pick('color9')          || '#ff6b7a',
-        brightGreen:  pick('color10')         || '#00ff9d',
-        brightYellow: pick('color11')         || '#ffd166',
-        brightBlue:   pick('color12')         || '#4cc9f0',
-        brightMagenta:pick('color13')         || '#c084fc',
-        brightCyan:   pick('color14')         || '#67e8f9',
-        brightWhite:  pick('color15')         || '#f0f6fc',
-    };
+  const raw = readFile(f);
+  if (!raw) return null;
+  const pick = (key) => {
+    const m = raw.match(new RegExp(`^\\s*${key}\\s+([#0-9a-fA-F]{4,9})`, "m"));
+    return m ? normalizeHex(m[1]) : null;
+  };
+  const bg = pick("background");
+  const fg = pick("foreground");
+  if (!bg && !fg) return null;
+  return {
+    background: bg || "#0d1117",
+    foreground: fg || "#c9d1d9",
+    cursor: pick("cursor") || "#00ff9d",
+    black: pick("color0") || "#1c2640",
+    red: pick("color1") || "#ff4757",
+    green: pick("color2") || "#00ff9d",
+    yellow: pick("color3") || "#ffd166",
+    blue: pick("color4") || "#4cc9f0",
+    magenta: pick("color5") || "#c084fc",
+    cyan: pick("color6") || "#00ffff",
+    white: pick("color7") || "#c9d1d9",
+    brightBlack: pick("color8") || "#2a3a56",
+    brightRed: pick("color9") || "#ff6b7a",
+    brightGreen: pick("color10") || "#00ff9d",
+    brightYellow: pick("color11") || "#ffd166",
+    brightBlue: pick("color12") || "#4cc9f0",
+    brightMagenta: pick("color13") || "#c084fc",
+    brightCyan: pick("color14") || "#67e8f9",
+    brightWhite: pick("color15") || "#f0f6fc",
+  };
 }
 
 /* Xresources: *.color0 … *.color15, *.background, *.foreground */
 function tryParseXresources(f) {
-    const raw = readFile(f);
-    if (!raw) return null;
-    const pick = (key) => {
-        const m = raw.match(new RegExp(`\\*\\.?${key}\\s*:\\s*([#0-9a-fA-F]{4,9})`));
-        return m ? normalizeHex(m[1]) : null;
-    };
-    const bg = pick('background'); const fg = pick('foreground');
-    if (!bg && !fg) return null;
-    const colors = Array.from({ length: 16 }, (_, i) => pick(`color${i}`));
-    return {
-        background:    bg || '#0d1117',
-        foreground:    fg || '#c9d1d9',
-        cursor:        pick('cursorColor') || '#00ff9d',
-        black:         colors[0]  || '#1c2640',
-        red:           colors[1]  || '#ff4757',
-        green:         colors[2]  || '#00ff9d',
-        yellow:        colors[3]  || '#ffd166',
-        blue:          colors[4]  || '#4cc9f0',
-        magenta:       colors[5]  || '#c084fc',
-        cyan:          colors[6]  || '#00ffff',
-        white:         colors[7]  || '#c9d1d9',
-        brightBlack:   colors[8]  || '#2a3a56',
-        brightRed:     colors[9]  || '#ff6b7a',
-        brightGreen:   colors[10] || '#00ff9d',
-        brightYellow:  colors[11] || '#ffd166',
-        brightBlue:    colors[12] || '#4cc9f0',
-        brightMagenta: colors[13] || '#c084fc',
-        brightCyan:    colors[14] || '#67e8f9',
-        brightWhite:   colors[15] || '#f0f6fc',
-    };
+  const raw = readFile(f);
+  if (!raw) return null;
+  const pick = (key) => {
+    const m = raw.match(
+      new RegExp(`\\*\\.?${key}\\s*:\\s*([#0-9a-fA-F]{4,9})`),
+    );
+    return m ? normalizeHex(m[1]) : null;
+  };
+  const bg = pick("background");
+  const fg = pick("foreground");
+  if (!bg && !fg) return null;
+  const colors = Array.from({ length: 16 }, (_, i) => pick(`color${i}`));
+  return {
+    background: bg || "#0d1117",
+    foreground: fg || "#c9d1d9",
+    cursor: pick("cursorColor") || "#00ff9d",
+    black: colors[0] || "#1c2640",
+    red: colors[1] || "#ff4757",
+    green: colors[2] || "#00ff9d",
+    yellow: colors[3] || "#ffd166",
+    blue: colors[4] || "#4cc9f0",
+    magenta: colors[5] || "#c084fc",
+    cyan: colors[6] || "#00ffff",
+    white: colors[7] || "#c9d1d9",
+    brightBlack: colors[8] || "#2a3a56",
+    brightRed: colors[9] || "#ff6b7a",
+    brightGreen: colors[10] || "#00ff9d",
+    brightYellow: colors[11] || "#ffd166",
+    brightBlue: colors[12] || "#4cc9f0",
+    brightMagenta: colors[13] || "#c084fc",
+    brightCyan: colors[14] || "#67e8f9",
+    brightWhite: colors[15] || "#f0f6fc",
+  };
 }
 
 /* GNOME Terminal via dconf */
 function readGnomeTheme() {
-    return new Promise((resolve) => {
-        exec("dconf read /org/gnome/terminal/legacy/profiles:/:$(dconf list /org/gnome/terminal/legacy/profiles:/ | head -1)/background-color", (err, stdout) => {
-            if (err || !stdout.trim()) return resolve(null);
-            // minimal: just surface background and foreground
-            const bg = stdout.trim().replace(/'/g, '').replace(/rgb\((\d+),(\d+),(\d+)\)/, (_, r, g, b) =>
-                '#' + [r,g,b].map(n => parseInt(n).toString(16).padStart(2,'0')).join(''));
-            resolve(bg ? { background: bg } : null);
-        });
-    });
+  return new Promise((resolve) => {
+    exec(
+      "dconf read /org/gnome/terminal/legacy/profiles:/:$(dconf list /org/gnome/terminal/legacy/profiles:/ | head -1)/background-color",
+      (err, stdout) => {
+        if (err || !stdout.trim()) return resolve(null);
+        // minimal: just surface background and foreground
+        const bg = stdout
+          .trim()
+          .replace(/'/g, "")
+          .replace(
+            /rgb\((\d+),(\d+),(\d+)\)/,
+            (_, r, g, b) =>
+              "#" +
+              [r, g, b]
+                .map((n) => parseInt(n).toString(16).padStart(2, "0"))
+                .join(""),
+          );
+        resolve(bg ? { background: bg } : null);
+      },
+    );
+  });
 }
 
 function normalizeHex(v) {
-    if (!v) return null;
-    const h = v.startsWith('#') ? v : '#' + v;
-    // Expand 4-char (#RGB) to 7-char
-    if (h.length === 4) return '#' + h[1]+h[1]+h[2]+h[2]+h[3]+h[3];
-    return h;
+  if (!v) return null;
+  const h = v.startsWith("#") ? v : "#" + v;
+  // Expand 4-char (#RGB) to 7-char
+  if (h.length === 4) return "#" + h[1] + h[1] + h[2] + h[2] + h[3] + h[3];
+  return h;
 }
 
 // ── WebSocket SSH sessions ────────────────────────────────────────
-wss.on('connection', (ws, req) => {
-    const url  = new URL(req.url, `http://localhost:${PORT}`);
-    const host = url.searchParams.get('host');
-    const user = url.searchParams.get('user') || 'root';
-    const cols = parseInt(url.searchParams.get('cols') || '220', 10);
-    const rows = parseInt(url.searchParams.get('rows') || '50',  10);
+wss.on("connection", (ws, req) => {
+  const url = new URL(req.url, `http://localhost:${PORT}`);
+  const host = url.searchParams.get("host");
+  const user = url.searchParams.get("user") || "root";
+  const cols = parseInt(url.searchParams.get("cols") || "220", 10);
+  const rows = parseInt(url.searchParams.get("rows") || "50", 10);
 
-    if (!host) {
-        ws.send(JSON.stringify({ type: 'error', data: 'Missing host\r\n' }));
-        return ws.close();
+  if (!host) {
+    ws.send(JSON.stringify({ type: "error", data: "Missing host\r\n" }));
+    return ws.close();
+  }
+
+  let ptyProcess;
+  try {
+    ptyProcess = pty.spawn(
+      "ssh",
+      [
+        "-o",
+        "StrictHostKeyChecking=ask",
+        "-o",
+        "ConnectTimeout=10",
+        `${user}@${host}`,
+      ],
+      { name: "xterm-256color", cols, rows, cwd: HOME, env: process.env },
+    );
+  } catch (err) {
+    ws.send(
+      JSON.stringify({
+        type: "error",
+        data: `Spawn failed: ${err.message}\r\n`,
+      }),
+    );
+    return ws.close();
+  }
+
+  ptyProcess.onData((data) => {
+    if (ws.readyState === ws.OPEN)
+      ws.send(JSON.stringify({ type: "data", data }));
+  });
+  ptyProcess.onExit(({ exitCode }) => {
+    if (ws.readyState === ws.OPEN) {
+      ws.send(JSON.stringify({ type: "exit", code: exitCode }));
+      ws.close();
     }
+  });
 
-    console.log(`[SSH] ${user}@${host} (${cols}x${rows})`);
-
-    let ptyProcess;
+  ws.on("message", (raw) => {
     try {
-        ptyProcess = pty.spawn('ssh', [
-            '-o', 'StrictHostKeyChecking=ask',
-            '-o', 'ConnectTimeout=10',
-            `${user}@${host}`
-        ], { name: 'xterm-256color', cols, rows, cwd: HOME, env: process.env });
-    } catch (err) {
-        ws.send(JSON.stringify({ type: 'error', data: `Spawn failed: ${err.message}\r\n` }));
-        return ws.close();
+      const m = JSON.parse(raw);
+      if (m.type === "data") ptyProcess.write(m.data);
+      if (m.type === "resize") ptyProcess.resize(m.cols, m.rows);
+    } catch {
+      /* ignore */
     }
-
-    ptyProcess.onData(data => { if (ws.readyState === ws.OPEN) ws.send(JSON.stringify({ type: 'data', data })); });
-    ptyProcess.onExit(({ exitCode }) => {
-        console.log(`[SSH] exit ${exitCode} for ${user}@${host}`);
-        if (ws.readyState === ws.OPEN) { ws.send(JSON.stringify({ type: 'exit', code: exitCode })); ws.close(); }
-    });
-
-    ws.on('message', raw => {
-        try {
-            const m = JSON.parse(raw);
-            if (m.type === 'data')   ptyProcess.write(m.data);
-            if (m.type === 'resize') ptyProcess.resize(m.cols, m.rows);
-        } catch { /* ignore */ }
-    });
-    ws.on('close', () => { try { ptyProcess.kill(); } catch {} });
-    ws.on('error', ()  => { try { ptyProcess.kill(); } catch {} });
+  });
+  ws.on("close", () => {
+    try {
+      ptyProcess.kill();
+    } catch {}
+  });
+  ws.on("error", () => {
+    try {
+      ptyProcess.kill();
+    } catch {}
+  });
 });
 
 // ── SSE: notify clients when content.json changes ───────────────
 const sseClients = new Set();
 
-app.get('/servers/watch', (req, res) => {
-    res.setHeader('Content-Type',  'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection',    'keep-alive');
-    res.flushHeaders();
-    res.write('data: connected\n\n');
-    sseClients.add(res);
-    req.on('close', () => sseClients.delete(res));
+app.get("/servers/watch", (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+  res.write("data: connected\n\n");
+  sseClients.add(res);
+  req.on("close", () => sseClients.delete(res));
 });
 
 // Watch the parent directory so atomic saves (write-temp-then-rename, used by
 // VS Code and most editors) are reliably detected even after an inode change.
-fs.watch(path.dirname(CONTENT_PATH), { persistent: false }, (event, filename) => {
+fs.watch(
+  path.dirname(CONTENT_PATH),
+  { persistent: false },
+  (event, filename) => {
     if (filename !== path.basename(CONTENT_PATH)) return;
     for (const res of sseClients) {
-        try { res.write('data: update\n\n'); } catch { sseClients.delete(res); }
+      try {
+        res.write("data: update\n\n");
+      } catch {
+        sseClients.delete(res);
+      }
     }
+  },
+);
+
+server.on("error", () => {
+  process.exit(1);
 });
 
-server.on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-        console.error(`[backend] Port ${PORT} already in use — is another instance running?`);
-    } else {
-        console.error('[backend] Server error:', err.message);
-    }
-    process.exit(1);
-});
-
-server.listen(PORT, () => {
-    console.log(`\n  fword-ssh backend`);
-    console.log(`  HTTP → http://localhost:${PORT}`);
-    console.log(`  WS   → ws://localhost:${PORT}/?user=<u>&host=<h>\n`);
-});
+server.listen(PORT);

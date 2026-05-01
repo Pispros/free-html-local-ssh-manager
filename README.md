@@ -56,6 +56,100 @@ bash.js                     # Node backend (WebSocket SSH bridge, port 5556)
 server.js                   # Standalone HTTP server (browser mode)
 ```
 
+## JSON Configuration Format
+
+The `assets/json/content.json` file stores SSH server configurations in JSON format. The structure supports both individual servers and grouped servers.
+
+### Basic Structure
+
+The file contains an array of server objects. Each object can be either:
+1. An individual server
+2. A group containing multiple servers
+
+### Individual Server Format
+
+```json
+{
+  "server": "server-name",
+  "ip": "192.168.1.100",
+  "user": "username",
+  "pwd": "encrypted-password"
+}
+```
+
+### Grouped Servers Format
+
+```json
+{
+  "groupName": "Group Display Name",
+  "nestedServers": [
+    {
+      "server": "server-1",
+      "ip": "192.168.1.101",
+      "user": "user1",
+      "pwd": "encrypted-password-1"
+    },
+    {
+      "server": "server-2",
+      "ip": "192.168.1.102",
+      "user": "user2",
+      "pwd": "encrypted-password-2"
+    }
+  ]
+}
+```
+
+### Field Descriptions
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `server` | string | Display name for the server (appears in UI) |
+| `ip` | string | IP address or hostname of the server |
+| `user` | string | SSH username |
+| `pwd` | string | AES-256-CBC encrypted password (format: `iv:ciphertext`) |
+| `groupName` | string | Display name for a server group (only for grouped servers) |
+| `nestedServers` | array | Array of server objects within a group |
+
+### Password Encryption
+
+Passwords are encrypted using AES-256-CBC with a magic salt. The encrypted format is:
+```
+iv:ciphertext
+```
+Where:
+- `iv` = 32-character hex initialization vector
+- `ciphertext` = 32-character hex encrypted password
+
+### Example Configuration
+
+```json
+[
+  {
+    "groupName": "Production Servers",
+    "nestedServers": [
+      {
+        "server": "Web Server",
+        "ip": "192.168.1.10",
+        "user": "admin",
+        "pwd": "578a860634c20f818deb1deb9fb64dc6:aefa41239198973d52a916761248aeb9"
+      },
+      {
+        "server": "Database Server",
+        "ip": "192.168.1.11",
+        "user": "dbadmin",
+        "pwd": "800b65903f70739163cb5fae7f511fa1:b7a0b2b5904a2385d349a46ee99fced9"
+      }
+    ]
+  },
+  {
+    "server": "Development Server",
+    "ip": "192.168.1.20",
+    "user": "dev",
+    "pwd": "c45f3b8a9e2d7a1f0b4c6d8e3f2a1b9c:8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2"
+  }
+]
+```
+
 ---
 
 ## Browser mode (Linux & macOS)

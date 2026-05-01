@@ -658,14 +658,57 @@ async function getData() {
       ? "http://localhost:5556/servers"
       : "assets/json/content.json";
     const r = await fetch(url);
-    sshList = await r.json();
-    if (!sshList.length)
+    const data = await r.json();
+
+    // Handle mixed structure: groups and individual servers
+    if (Array.isArray(data)) {
+      // Check if we have a mixed array (some groups, some individual servers)
+      const hasGroups = data.some(
+        (item) => item.groupName && item.nestedServers,
+      );
+      const hasIndividualServers = data.some((item) => item.server && item.ip);
+
+      if (hasGroups || hasIndividualServers) {
+        // Keep the mixed structure as-is
+        sshList = data;
+      } else {
+        // Empty array or unknown structure
+        sshList = [];
+      }
+    } else if (data && typeof data === "object") {
+      // Single object - could be a group or individual server
+      if (data.groupName && data.nestedServers) {
+        sshList = [data]; // Single group
+      } else if (data.server && data.ip) {
+        sshList = [data]; // Single individual server
+      } else {
+        sshList = [];
+      }
+    } else {
+      sshList = [];
+    }
+
+    // If still empty, create demo data
+    if (!sshList.length) {
       sshList = [
-        { server: "Demo VPS", ip: "192.168.1.1", user: "root", pwd: "" },
+        {
+          groupName: "Demo Group",
+          nestedServers: [
+            { server: "Demo VPS 1", ip: "192.168.1.1", user: "root", pwd: "" },
+          ],
+        },
+        { server: "Standalone VPS", ip: "10.0.0.1", user: "admin", pwd: "" },
       ];
+    }
   } catch {
     sshList = [
-      { server: "Demo VPS", ip: "192.168.1.1", user: "root", pwd: "" },
+      {
+        groupName: "Demo Group",
+        nestedServers: [
+          { server: "Demo VPS 1", ip: "192.168.1.1", user: "root", pwd: "" },
+        ],
+      },
+      { server: "Standalone VPS", ip: "10.0.0.1", user: "admin", pwd: "" },
     ];
   }
   renderVpsList();
@@ -685,6 +728,121 @@ if (IS_ELECTRON) {
   })();
 }
 
+const EYE_OPEN_ICON = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12,9A3,3 0 0,1 15,12A3,3 0 0,1 12,15A3,3 0 0,1 9,12A3,3 0 0,1 12,9M12,4.5C17,4.5 21.27,7.61 23,12C21.27,16.39 17,19.5 12,19.5C7,19.5 2.73,16.39 1,12C2.73,7.61 7,4.5 12,4.5M3.18,12C4.83,15.36 8.24,17.5 12,17.5C15.76,17.5 19.17,15.36 20.82,12C19.17,8.64 15.76,6.5 12,6.5C8.24,6.5 4.83,8.64 3.18,12Z"/></svg>`;
+const EYE_CLOSED_ICON = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2,5.27L3.28,4L20,20.72L18.73,22L15.65,18.92C14.5,19.3 13.28,19.5 12,19.5C7,19.5 2.73,16.39 1,12C1.69,10.24 2.79,8.69 4.19,7.46L2,5.27M12,9A3,3 0 0,1 15,12C15,12.35 14.94,12.69 14.83,13L11,9.17C11.31,9.06 11.65,9 12,9M12,4.5C17,4.5 21.27,7.61 23,12C22.18,14.08 20.79,15.88 19,17.19L17.58,15.76C18.94,14.82 20.06,13.54 20.82,12C19.17,8.64 15.76,6.5 12,6.5C10.91,6.5 9.84,6.68 8.84,7L7.3,5.47C8.74,4.85 10.33,4.5 12,4.5M3.18,12C4.83,15.36 8.24,17.5 12,17.5C12.69,17.5 13.37,17.43 14,17.29L11.72,15C10.29,14.85 9.15,13.71 9,12.28L5.6,8.87C4.61,9.72 3.78,10.78 3.18,12Z"/></svg>`;
+
+function createServerCard(vps, serverIndex, animationIndex = serverIndex) {
+  const card = document.createElement("div");
+  card.className = "vps-card";
+  card.style.animationDelay = animationIndex * 55 + "ms";
+  card.innerHTML = `
+    <div class="card-top">
+      <div class="card-orb">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(0,255,100,.5)"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10l1.41-1.41L10 11.17l-1.41 1.41L6 10zm4 4h8v-2h-8v2z"/></svg>
+      </div>
+      <div class="card-info">
+        <div class="card-name">${vps.server || "Unknown"}</div>
+        <div class="card-ip">
+          <span class="card-ip-val" id="cip-${serverIndex}">*.*.*.*</span>
+          <button class="eye-btn" data-idx="${serverIndex}" data-show="false">${EYE_OPEN_ICON}</button>
+        </div>
+      </div>
+    </div>
+    <div class="card-bottom">
+      <button class="card-btn primary" data-idx="${serverIndex}" data-action="connect"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Connect</button>
+      <button class="card-btn" data-idx="${serverIndex}" data-action="copy"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>SSH Cmd</button>
+      <button class="card-btn" data-idx="${serverIndex}" data-action="pwd"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>Password</button>
+    </div>`;
+  return card;
+}
+
+function createGroupCard(group, groupIndex, animationIndex) {
+  const count = Array.isArray(group.nestedServers) ? group.nestedServers.length : 0;
+  const card = document.createElement("div");
+  card.className = "vps-card group-card";
+  card.style.animationDelay = animationIndex * 55 + "ms";
+  card.innerHTML = `
+    <div class="card-top">
+      <div class="card-orb group-orb">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(0,255,100,.5)"><path d="M10 4H2v16h20V6H12l-2-2z"/></svg>
+        <span class="group-badge">${count}</span>
+      </div>
+      <div class="card-info">
+        <div class="card-name">${group.groupName || "Unnamed Group"}</div>
+        <div class="card-ip"><span class="card-ip-val">Group • ${count} server${count !== 1 ? "s" : ""}</span></div>
+      </div>
+    </div>
+    <div class="card-bottom">
+      <button class="card-btn primary" data-action="view-group" data-group-idx="${groupIndex}"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5z"/></svg>Open</button>
+      <button class="card-btn" data-action="connect-all" data-group-idx="${groupIndex}"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>All</button>
+    </div>`;
+  return card;
+}
+
+function handleServerAction(btn) {
+  const vps = window.sshListFlat[+btn.dataset.idx];
+  if (!vps) return;
+  if (btn.dataset.action === "connect") openTile(vps);
+  if (btn.dataset.action === "copy") {
+    navigator.clipboard.writeText(`ssh ${vps.user}@${vps.ip}`);
+    showToast("SSH command copied!");
+  }
+  if (btn.dataset.action === "pwd") {
+    showDialog({ title: "Decrypt Password", message: `${vps.server || vps.ip}`, input: true, placeholder: "Enter salt…", inputType: "password" }).then((salt) => {
+      if (salt === null) return;
+      try {
+        navigator.clipboard.writeText(decrypt(vps.pwd, "your_password_here", String(salt)));
+        showToast("Password copied!");
+      } catch {
+        showToast("Incorrect salt!");
+      }
+    });
+  }
+}
+
+function wireServerCardEvents(root = document) {
+  root.querySelectorAll(".eye-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const i = +btn.dataset.idx;
+      const vps = window.sshListFlat[i];
+      if (!vps) return;
+      const show = btn.dataset.show === "false";
+      btn.dataset.show = String(show);
+      const ipEl = root.querySelector(`#cip-${i}`) || document.getElementById(`cip-${i}`);
+      if (ipEl) ipEl.textContent = show ? vps.ip : "*.*.*.*";
+      btn.innerHTML = show ? EYE_CLOSED_ICON : EYE_OPEN_ICON;
+    });
+  });
+  root.querySelectorAll(".card-btn[data-idx]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      handleServerAction(btn);
+    });
+  });
+}
+
+function openGroupModal(group) {
+  const overlay = document.getElementById("group-overlay");
+  const title = document.getElementById("group-title");
+  const count = document.getElementById("group-modal-count");
+  const list = document.getElementById("group-server-grid");
+  const servers = Array.isArray(group.nestedServers) ? group.nestedServers : [];
+  title.textContent = group.groupName || "Unnamed Group";
+  count.textContent = `${servers.length} server${servers.length !== 1 ? "s" : ""}`;
+  list.innerHTML = "";
+  servers.forEach((server, index) => list.appendChild(createServerCard(server, window.sshListFlat.indexOf(server), index)));
+  overlay.classList.add("active");
+  overlay.style.display = "flex";
+  wireServerCardEvents(list);
+}
+
+function closeGroupModal() {
+  const overlay = document.getElementById("group-overlay");
+  overlay.classList.remove("active");
+  overlay.style.display = "none";
+}
+
 function renderVpsList() {
   const grid = document.getElementById("vps-grid");
   grid.innerHTML = "";
@@ -692,90 +850,46 @@ function renderVpsList() {
     grid.innerHTML = '<p class="no-servers">No servers configured.</p>';
     return;
   }
-  sshList.forEach((vps, i) => {
-    const card = document.createElement("div");
-    card.className = "vps-card";
-    card.style.animationDelay = i * 55 + "ms";
-    card.innerHTML = `
-      <div class="card-top">
-        <div class="card-orb">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(0,255,100,.5)"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10l1.41-1.41L10 11.17l-1.41 1.41L6 10zm4 4h8v-2h-8v2z"/></svg>
-        </div>
-        <div class="card-info">
-          <div class="card-name">${vps.server || "Unknown"}</div>
-          <div class="card-ip">
-            <span class="card-ip-val" id="cip-${i}">*.*.*.*</span>
-            <button class="eye-btn" id="eye-${i}" data-idx="${i}" data-show="false">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12,9A3,3 0 0,1 15,12A3,3 0 0,1 12,15A3,3 0 0,1 9,12A3,3 0 0,1 12,9M12,4.5C17,4.5 21.27,7.61 23,12C21.27,16.39 17,19.5 12,19.5C7,19.5 2.73,16.39 1,12C2.73,7.61 7,4.5 12,4.5M3.18,12C4.83,15.36 8.24,17.5 12,17.5C15.76,17.5 19.17,15.36 20.82,12C19.17,8.64 15.76,6.5 12,6.5C8.24,6.5 4.83,8.64 3.18,12Z"/></svg>
-            </button>
-          </div>
-        </div>
-      </div>
-      <div class="card-bottom">
-        <button class="card-btn primary" data-idx="${i}" data-action="connect">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-          Connect
-        </button>
-        <button class="card-btn" data-idx="${i}" data-action="copy">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-          SSH Cmd
-        </button>
-        <button class="card-btn" data-idx="${i}" data-action="pwd">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-          Password
-        </button>
-      </div>`;
-    grid.appendChild(card);
+  const groups = [];
+  const individualServers = [];
+  const allServers = [];
+  sshList.forEach((item) => {
+    if (item && item.groupName && Array.isArray(item.nestedServers)) {
+      groups.push(item);
+      item.nestedServers.forEach((server) => allServers.push(server));
+    } else if (item && item.server && item.ip) {
+      individualServers.push(item);
+      allServers.push(item);
+    }
   });
-
-  // Wire eye buttons
-  document.querySelectorAll(".eye-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const i = +btn.dataset.idx;
-      const show = btn.dataset.show === "false";
-      btn.dataset.show = String(show);
-      document.getElementById(`cip-${i}`).textContent = show
-        ? sshList[i].ip
-        : "*.*.*.*";
-      btn.innerHTML = show
-        ? `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2,5.27L3.28,4L20,20.72L18.73,22L15.65,18.92C14.5,19.3 13.28,19.5 12,19.5C7,19.5 2.73,16.39 1,12C1.69,10.24 2.79,8.69 4.19,7.46L2,5.27M12,9A3,3 0 0,1 15,12C15,12.35 14.94,12.69 14.83,13L11,9.17C11.31,9.06 11.65,9 12,9M12,4.5C17,4.5 21.27,7.61 23,12C22.18,14.08 20.79,15.88 19,17.19L17.58,15.76C18.94,14.82 20.06,13.54 20.82,12C19.17,8.64 15.76,6.5 12,6.5C10.91,6.5 9.84,6.68 8.84,7L7.3,5.47C8.74,4.85 10.33,4.5 12,4.5M3.18,12C4.83,15.36 8.24,17.5 12,17.5C12.69,17.5 13.37,17.43 14,17.29L11.72,15C10.29,14.85 9.15,13.71 9,12.28L5.6,8.87C4.61,9.72 3.78,10.78 3.18,12Z"/></svg>`
-        : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12,9A3,3 0 0,1 15,12A3,3 0 0,1 12,15A3,3 0 0,1 9,12A3,3 0 0,1 12,9M12,4.5C17,4.5 21.27,7.61 23,12C21.27,16.39 17,19.5 12,19.5C7,19.5 2.73,16.39 1,12C2.73,7.61 7,4.5 12,4.5M3.18,12C4.83,15.36 8.24,17.5 12,17.5C15.76,17.5 19.17,15.36 20.82,12C19.17,8.64 15.76,6.5 12,6.5C8.24,6.5 4.83,8.64 3.18,12Z"/></svg>`;
+  window.sshListFlat = allServers;
+  let cardIndex = 0;
+  individualServers.forEach((vps) => {
+    grid.appendChild(createServerCard(vps, allServers.indexOf(vps), cardIndex));
+    cardIndex++;
+  });
+  groups.forEach((group, groupIndex) => {
+    if (!group.nestedServers.length) return;
+    const groupCard = createGroupCard(group, groupIndex, cardIndex);
+    groupCard.addEventListener("click", (e) => {
+      const actionBtn = e.target.closest(".card-btn");
+      if (actionBtn?.dataset.action === "connect-all") {
+        group.nestedServers.forEach((server) => openTile(server));
+        return;
+      }
+      openGroupModal(group);
     });
+    grid.appendChild(groupCard);
+    cardIndex++;
   });
-
-  // Wire card buttons
-  document.querySelectorAll(".card-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const vps = sshList[+btn.dataset.idx];
-      if (btn.dataset.action === "connect") {
-        openTile(vps);
-      }
-      if (btn.dataset.action === "copy") {
-        navigator.clipboard.writeText(`ssh ${vps.user}@${vps.ip}`);
-        showToast("SSH command copied!");
-      }
-      if (btn.dataset.action === "pwd") {
-        showDialog({
-          title: "Decrypt Password",
-          message: `${vps.server || vps.ip}`,
-          input: true,
-          placeholder: "Enter salt…",
-          inputType: "password",
-        }).then((salt) => {
-          if (salt === null) return;
-          try {
-            navigator.clipboard.writeText(
-              decrypt(vps.pwd, "your_password_here", String(salt)),
-            );
-            showToast("Password copied!");
-          } catch {
-            showToast("Incorrect salt!");
-          }
-        });
-      }
-    });
-  });
+  if (!grid.children.length) grid.innerHTML = '<p class="no-servers">No servers configured.</p>';
+  wireServerCardEvents(grid);
 }
+
+document.getElementById("group-close")?.addEventListener("click", closeGroupModal);
+document.getElementById("group-overlay")?.addEventListener("click", (e) => {
+  if (e.target.id === "group-overlay") closeGroupModal();
+});
 
 /* ══════════════════════════════════════════════════════════
    WORKSPACE
