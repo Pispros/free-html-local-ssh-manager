@@ -757,7 +757,9 @@ function createServerCard(vps, serverIndex, animationIndex = serverIndex) {
 }
 
 function createGroupCard(group, groupIndex, animationIndex) {
-  const count = Array.isArray(group.nestedServers) ? group.nestedServers.length : 0;
+  const count = Array.isArray(group.nestedServers)
+    ? group.nestedServers.length
+    : 0;
   const card = document.createElement("div");
   card.className = "vps-card group-card";
   card.style.animationDelay = animationIndex * 55 + "ms";
@@ -788,10 +790,18 @@ function handleServerAction(btn) {
     showToast("SSH command copied!");
   }
   if (btn.dataset.action === "pwd") {
-    showDialog({ title: "Decrypt Password", message: `${vps.server || vps.ip}`, input: true, placeholder: "Enter salt…", inputType: "password" }).then((salt) => {
+    showDialog({
+      title: "Decrypt Password",
+      message: `${vps.server || vps.ip}`,
+      input: true,
+      placeholder: "Enter salt…",
+      inputType: "password",
+    }).then((salt) => {
       if (salt === null) return;
       try {
-        navigator.clipboard.writeText(decrypt(vps.pwd, "your_password_here", String(salt)));
+        navigator.clipboard.writeText(
+          decrypt(vps.pwd, "your_password_here", String(salt)),
+        );
         showToast("Password copied!");
       } catch {
         showToast("Incorrect salt!");
@@ -809,7 +819,8 @@ function wireServerCardEvents(root = document) {
       if (!vps) return;
       const show = btn.dataset.show === "false";
       btn.dataset.show = String(show);
-      const ipEl = root.querySelector(`#cip-${i}`) || document.getElementById(`cip-${i}`);
+      const ipEl =
+        root.querySelector(`#cip-${i}`) || document.getElementById(`cip-${i}`);
       if (ipEl) ipEl.textContent = show ? vps.ip : "*.*.*.*";
       btn.innerHTML = show ? EYE_CLOSED_ICON : EYE_OPEN_ICON;
     });
@@ -831,7 +842,11 @@ function openGroupModal(group) {
   title.textContent = group.groupName || "Unnamed Group";
   count.textContent = `${servers.length} server${servers.length !== 1 ? "s" : ""}`;
   list.innerHTML = "";
-  servers.forEach((server, index) => list.appendChild(createServerCard(server, window.sshListFlat.indexOf(server), index)));
+  servers.forEach((server, index) =>
+    list.appendChild(
+      createServerCard(server, window.sshListFlat.indexOf(server), index),
+    ),
+  );
   overlay.classList.add("active");
   overlay.style.display = "flex";
   wireServerCardEvents(list);
@@ -864,10 +879,6 @@ function renderVpsList() {
   });
   window.sshListFlat = allServers;
   let cardIndex = 0;
-  individualServers.forEach((vps) => {
-    grid.appendChild(createServerCard(vps, allServers.indexOf(vps), cardIndex));
-    cardIndex++;
-  });
   groups.forEach((group, groupIndex) => {
     if (!group.nestedServers.length) return;
     const groupCard = createGroupCard(group, groupIndex, cardIndex);
@@ -882,11 +893,18 @@ function renderVpsList() {
     grid.appendChild(groupCard);
     cardIndex++;
   });
-  if (!grid.children.length) grid.innerHTML = '<p class="no-servers">No servers configured.</p>';
+  individualServers.forEach((vps) => {
+    grid.appendChild(createServerCard(vps, allServers.indexOf(vps), cardIndex));
+    cardIndex++;
+  });
+  if (!grid.children.length)
+    grid.innerHTML = '<p class="no-servers">No servers configured.</p>';
   wireServerCardEvents(grid);
 }
 
-document.getElementById("group-close")?.addEventListener("click", closeGroupModal);
+document
+  .getElementById("group-close")
+  ?.addEventListener("click", closeGroupModal);
 document.getElementById("group-overlay")?.addEventListener("click", (e) => {
   if (e.target.id === "group-overlay") closeGroupModal();
 });

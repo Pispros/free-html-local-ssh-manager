@@ -66,6 +66,8 @@ The file contains an array of server objects. Each object can be either:
 1. An individual server
 2. A group containing multiple servers
 
+**Display Order:** Grouped servers are displayed before standalone servers in the interface.
+
 ### Individual Server Format
 
 ```json
@@ -142,10 +144,27 @@ Where:
     ]
   },
   {
+    "groupName": "Staging Environment",
+    "nestedServers": [
+      {
+        "server": "Staging App",
+        "ip": "192.168.1.30",
+        "user": "staging",
+        "pwd": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7:f8e9d0c1b2a3f4e5d6c7b8a9f0e1d2c3"
+      }
+    ]
+  },
+  {
     "server": "Development Server",
     "ip": "192.168.1.20",
     "user": "dev",
     "pwd": "c45f3b8a9e2d7a1f0b4c6d8e3f2a1b9c:8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2"
+  },
+  {
+    "server": "Backup Server",
+    "ip": "192.168.1.40",
+    "user": "backup",
+    "pwd": "d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1:c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7"
   }
 ]
 ```
