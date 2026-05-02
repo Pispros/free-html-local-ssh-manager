@@ -184,7 +184,7 @@ Runs the app as a regular website served by Node.js — no Electron needed.
 - A web server pointing at this directory (Nginx / Apache / etc.) **or** use the built-in server
 
 ```bash
-sudo npm install -g nodemon
+sudo yarn -g nodemon
 ```
 
 > The app always uses **port 5556** for its WebSocket SSH bridge.
@@ -202,7 +202,7 @@ bash install.sh
 
 ```bash
 # Install Node dependencies
-npm install
+yarn
 
 # Start the backend
 fwordssh app
@@ -218,7 +218,7 @@ fwordssh add
 ### Prerequisites
 
 ```bash
-# Node.js ≥ 18 + npm
+# Node.js ≥ 18 + npm/yarn
 sudo apt install nodejs npm          # Debian/Ubuntu
 # or
 sudo pacman -S nodejs npm            # Arch
@@ -236,7 +236,7 @@ sudo pacman -S base-devel python           # Arch
 
 ```bash
 # 1. Install dependencies
-npm install
+yarn
 
 # 2. Build the AppImage
 yarn build:linux
@@ -285,7 +285,7 @@ xcode-select --install
 
 ```bash
 # 1. Install dependencies
-npm install
+yarn
 
 # 2. Build the DMG
 yarn build:mac
