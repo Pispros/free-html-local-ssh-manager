@@ -5,9 +5,10 @@
 >
 > 🔍 **Independent audit available:** see [SECURITY-AUDIT.md](SECURITY-AUDIT.md) for a full line-by-line analysis confirming that the app is 100 % local with no external network calls, no CDN, and no telemetry.
 
-<img src="screen.gif" />
-<img src="screen-2.png" />
+
 <img src="screen.png" />
+<img src="screen-2.png" />
+<img src="screen.gif" />
 
 ---
 
